@@ -5,55 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dark Chat</title>
 
-<!-- ✅ Firebase compat SDKs (old global namespace) -->
+<!-- ✅ Use COMPAT versions only (global firebase variable) -->
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
 
 <style>
 body{
-  background:#0f172a;
-  color:#e2e8f0;
+  background:#0f172a;color:#e2e8f0;
   font-family:Segoe UI,Arial,sans-serif;
-  margin:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
+  margin:0;display:flex;justify-content:center;align-items:center;height:100vh;
 }
-.container{
-  background:#1e293b;
-  padding:25px;
-  border-radius:16px;
-  width:90%;
-  max-width:420px;
-  box-shadow:0 8px 20px rgba(0,0,0,.6);
-}
+.container{background:#1e293b;padding:25px;border-radius:16px;width:90%;max-width:420px;box-shadow:0 8px 20px rgba(0,0,0,.6);}
 h2{margin-top:0;text-align:center;}
-input,button{
-  width:100%;
-  padding:12px;
-  margin:8px 0;
-  border:none;
-  border-radius:8px;
-  font-size:16px;
-}
+input,button{width:100%;padding:12px;margin:8px 0;border:none;border-radius:8px;font-size:16px;}
 input{background:#334155;color:#fff;}
 button{background:#3b82f6;color:#fff;cursor:pointer;}
 button:hover{background:#2563eb;}
-.chatbox{
-  background:#0f172a;
-  border-radius:10px;
-  padding:10px;
-  height:300px;
-  overflow-y:auto;
-  margin-bottom:10px;
-}
-.message{
-  margin:6px 0;
-  padding:8px 12px;
-  background:#334155;
-  border-radius:8px;
-}
+.chatbox{background:#0f172a;border-radius:10px;padding:10px;height:300px;overflow-y:auto;margin-bottom:10px;}
+.message{margin:6px 0;padding:8px 12px;background:#334155;border-radius:8px;}
 .self{background:#3b82f6;}
 </style>
 </head>
@@ -86,7 +55,7 @@ const firebaseConfig = {
   measurementId: "G-YEJ32DTM64"
 };
 
-// ✅ Initialize
+// ✅ Initialize Firebase (compat)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -105,20 +74,18 @@ registerBtn.onclick = () => {
   const number = document.getElementById("number").value.trim();
   if(!name || !number){ alert("Please fill in all fields"); return; }
 
-  // Save user if not exists
   db.ref("users/"+number).set({ name });
-
   currentUser = { name, number };
+
   welcome.textContent = `Hello ${name}`;
   registerDiv.style.display="none";
   chatDiv.style.display="block";
 };
 
-// listen for new chat partner
 document.getElementById("searchNumber").addEventListener("change", e=>{
   const partner = e.target.value.trim();
   if(!partner) return;
-  if(chatRef) chatRef.off();   // detach old listener
+  if(chatRef) chatRef.off();
   const roomId = currentUser.number < partner ?
                  currentUser.number + "_" + partner :
                  partner + "_" + currentUser.number;
@@ -136,7 +103,6 @@ document.getElementById("searchNumber").addEventListener("change", e=>{
   });
 });
 
-// send message
 sendBtn.onclick = () => {
   const text = document.getElementById("msgInput").value.trim();
   const partner = document.getElementById("searchNumber").value.trim();
