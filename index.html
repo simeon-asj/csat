@@ -1,196 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DarkChat</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DarkChat</title>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js"></script>
+  <!-- Firebase SDKs (MUST come before your script.js) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js"></script>
 
-<style>
-:root{
-  --bg:#121212;
-  --card:#1e1e1e;
-  --accent:#4f46e5;
-  --text:#f1f1f1;
-  --input:#2a2a2a;
-}
-*{box-sizing:border-box;}
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:Segoe UI, Tahoma, sans-serif;
-  margin:0;
-}
-.container{
-  max-width:400px;
-  margin:60px auto;
-  padding:30px;
-  background:var(--card);
-  border-radius:16px;
-  box-shadow:0 4px 15px rgba(0,0,0,.4);
-}
-h1{text-align:center;margin-bottom:20px;}
-input{
-  width:100%;
-  padding:12px 14px;
-  margin:10px 0;
-  background:var(--input);
-  border:none;
-  border-radius:8px;
-  color:var(--text);
-  font-size:16px;
-}
-button{
-  width:100%;
-  padding:12px;
-  background:var(--accent);
-  border:none;
-  border-radius:8px;
-  color:white;
-  font-size:16px;
-  cursor:pointer;
-  transition:background .3s;
-}
-button:hover{background:#3730a3;}
-#chatSection{
-  display:none;
-  max-width:600px;
-}
-#searchBox{
-  display:flex;
-  gap:10px;
-  margin-bottom:15px;
-}
-#searchInput{
-  flex:1;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:var(--input);
-  color:var(--text);
-}
-#chatArea{
-  height:400px;
-  overflow-y:auto;
-  background:var(--input);
-  border-radius:12px;
-  padding:15px;
-  margin-bottom:12px;
-}
-.msg{
-  margin:8px 0;
-  padding:8px 12px;
-  border-radius:12px;
-  max-width:75%;
-}
-.me{background:var(--accent);align-self:flex-end;}
-.them{background:#333;}
-#sendRow{display:flex;gap:8px;}
-#msgInput{
-  flex:1;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:var(--input);
-  color:var(--text);
-}
-</style>
+  <style>
+    body {
+      margin:0;
+      background:#121212;
+      color:#fff;
+      font-family: Arial, sans-serif;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+    }
+    .register-box {
+      background:#1e1e1e;
+      padding:40px;
+      border-radius:12px;
+      text-align:center;
+      width:300px;
+      box-shadow:0 0 10px rgba(0,0,0,0.4);
+    }
+    input {
+      width:100%;
+      padding:12px;
+      margin:10px 0;
+      border:none;
+      border-radius:6px;
+      background:#2b2b2b;
+      color:#fff;
+    }
+    button {
+      width:100%;
+      padding:12px;
+      background:#5c6bc0;
+      border:none;
+      border-radius:6px;
+      color:#fff;
+      font-size:16px;
+      cursor:pointer;
+    }
+    button:hover {
+      background:#7986cb;
+    }
+    #chat-section {
+      display:none;
+      flex-direction:column;
+      width:100%;
+      max-width:400px;
+      height:80vh;
+      background:#1e1e1e;
+      border-radius:12px;
+      padding:20px;
+    }
+    #messages {
+      flex:1;
+      overflow-y:auto;
+      margin-bottom:10px;
+    }
+    .msg {
+      padding:8px;
+      background:#2b2b2b;
+      margin-bottom:8px;
+      border-radius:6px;
+    }
+  </style>
 </head>
 <body>
 
-<!-- Registration -->
-<div class="container" id="registerSection">
-  <h1>DarkChat</h1>
-  <input type="text" id="nameInput" placeholder="Enter your name">
-  <input type="text" id="numberInput" placeholder="Enter your number">
-  <button id="registerBtn">Register</button>
-</div>
-
-<!-- Chat -->
-<div class="container" id="chatSection">
-  <h1 id="welcome"></h1>
-  <div id="searchBox">
-    <input type="text" id="searchInput" placeholder="Enter number to chat">
-    <button id="searchBtn">Search</button>
+  <!-- Registration Box -->
+  <div class="register-box" id="register-section">
+    <h2>DarkChat</h2>
+    <input id="name" type="text" placeholder="Your Name" />
+    <input id="number" type="text" placeholder="Your Number" />
+    <button onclick="registerUser()">Register</button>
   </div>
-  <div id="chatArea"></div>
-  <div id="sendRow">
-    <input type="text" id="msgInput" placeholder="Type a message">
-    <button id="sendBtn">Send</button>
+
+  <!-- Chat Box -->
+  <div id="chat-section">
+    <div id="messages"></div>
+    <input id="chatInput" type="text" placeholder="Type a message" onkeydown="if(event.key==='Enter')sendMessage()" />
+    <button onclick="sendMessage()">Send</button>
   </div>
-</div>
 
-<script>
-// 🔑 Replace with your own Firebase config
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
-  authDomain: "csat-2d59c.firebaseapp.com",
-  databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "csat-2d59c",
-  storageBucket: "csat-2d59c.firebasestorage.app",
-  messagingSenderId: "250094013303",
-  appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
-  measurementId: "G-YEJ32DTM64"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+  <!-- Your App Script -->
+  <script>
+    // Your Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
+      authDomain: "csat-2d59c.firebaseapp.com",
+      databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "csat-2d59c",
+      storageBucket: "csat-2d59c.firebasestorage.app",
+      messagingSenderId: "250094013303",
+      appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
+      measurementId: "G-YEJ32DTM64"
+    };
 
-const registerSection = document.getElementById('registerSection');
-const chatSection = document.getElementById('chatSection');
-const welcome = document.getElementById('welcome');
-const searchInput = document.getElementById('searchInput');
-const chatArea = document.getElementById('chatArea');
-const msgInput = document.getElementById('msgInput');
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-let currentUser = {};
-let currentChat = null;
-let chatRef = null;
+    let currentUser = null;
 
-document.getElementById('registerBtn').onclick = () => {
-  const name = document.getElementById('nameInput').value.trim();
-  const number = document.getElementById('numberInput').value.trim();
-  if(!name || !number){alert('Please fill all fields');return;}
-  currentUser = { name, number };
-  db.ref('users/'+number).set({ name });
-  welcome.textContent = `Hi ${name}`;
-  registerSection.style.display='none';
-  chatSection.style.display='block';
-};
+    function registerUser() {
+      const name   = document.getElementById('name').value.trim();
+      const number = document.getElementById('number').value.trim();
+      if(!name || !number) {
+        alert("Please enter name and number");
+        return;
+      }
+      currentUser = { name, number };
 
-document.getElementById('searchBtn').onclick = () => {
-  const otherNumber = searchInput.value.trim();
-  if(!otherNumber){return;}
-  if(chatRef) chatRef.off(); // stop previous listener
-  const chatId = currentUser.number < otherNumber
-                 ? `${currentUser.number}_${otherNumber}`
-                 : `${otherNumber}_${currentUser.number}`;
-  currentChat = chatId;
-  chatArea.innerHTML = "";
-  chatRef = db.ref('chats/'+chatId);
-  chatRef.on('child_added', snap => {
-    const msg = snap.val();
-    const div = document.createElement('div');
-    div.className = 'msg ' + (msg.from===currentUser.number ? 'me':'them');
-    div.textContent = `${msg.text}`;
-    chatArea.appendChild(div);
-    chatArea.scrollTop = chatArea.scrollHeight;
-  });
-};
+      // Save user in DB
+      db.ref("users/" + number).set({ name });
 
-document.getElementById('sendBtn').onclick = () => {
-  const text = msgInput.value.trim();
-  if(!text || !currentChat) return;
-  db.ref('chats/'+currentChat).push({
-    from: currentUser.number,
-    text,
-    timestamp: Date.now()
-  });
-  msgInput.value = "";
-};
-</script>
+      // Show chat UI
+      document.getElementById('register-section').style.display = 'none';
+      document.getElementById('chat-section').style.display = 'flex';
+
+      // Start listening for messages
+      db.ref("messages").on("child_added", snap => {
+        const m = snap.val();
+        addMessage(m.name + ": " + m.text);
+      });
+    }
+
+    function addMessage(text) {
+      const div = document.createElement('div');
+      div.className = 'msg';
+      div.textContent = text;
+      document.getElementById('messages').appendChild(div);
+      div.scrollIntoView();
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if(text && currentUser){
+        db.ref("messages").push({
+          name: currentUser.name,
+          number: currentUser.number,
+          text: text,
+          timestamp: Date.now()
+        });
+        input.value = "";
+      }
+    }
+  </script>
 </body>
 </html>
