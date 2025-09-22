@@ -1,22 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dark Chat</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dark Chat – Register / Login</title>
 
-<!-- ✅ Use COMPAT versions only (global firebase variable) -->
+<!-- Firebase COMPAT SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
 
 <style>
-body{
-  background:#0f172a;color:#e2e8f0;
-  font-family:Segoe UI,Arial,sans-serif;
-  margin:0;display:flex;justify-content:center;align-items:center;height:100vh;
-}
-.container{background:#1e293b;padding:25px;border-radius:16px;width:90%;max-width:420px;box-shadow:0 8px 20px rgba(0,0,0,.6);}
-h2{margin-top:0;text-align:center;}
+body{background:#0f172a;color:#e2e8f0;font-family:Segoe UI,Arial,sans-serif;
+     display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+.container{background:#1e293b;padding:25px;border-radius:16px;width:90%;max-width:420px;
+           box-shadow:0 8px 20px rgba(0,0,0,.6);}
+h2{text-align:center;margin-top:0}
 input,button{width:100%;padding:12px;margin:8px 0;border:none;border-radius:8px;font-size:16px;}
 input{background:#334155;color:#fff;}
 button{background:#3b82f6;color:#fff;cursor:pointer;}
@@ -24,30 +23,46 @@ button:hover{background:#2563eb;}
 .chatbox{background:#0f172a;border-radius:10px;padding:10px;height:300px;overflow-y:auto;margin-bottom:10px;}
 .message{margin:6px 0;padding:8px 12px;background:#334155;border-radius:8px;}
 .self{background:#3b82f6;}
+.link{color:#3b82f6;cursor:pointer;text-align:center;display:block;margin-top:10px;}
 </style>
 </head>
 <body>
 
+<!-- Register -->
 <div class="container" id="registerDiv">
   <h2>Register</h2>
-  <input id="name" placeholder="Name">
-  <input id="number" placeholder="Phone Number">
+  <input id="regEmail" type="email" placeholder="Email">
+  <input id="regPass" type="password" placeholder="Password">
+  <input id="regName" placeholder="Display Name">
   <button id="registerBtn">Register</button>
+  <span class="link" onclick="showLogin()">Already have an account? Login</span>
 </div>
 
+<!-- Login -->
+<div class="container" id="loginDiv" style="display:none;">
+  <h2>Login</h2>
+  <input id="logEmail" type="email" placeholder="Email">
+  <input id="logPass" type="password" placeholder="Password">
+  <button id="loginBtn">Login</button>
+  <span class="link" onclick="showRegister()">Need an account? Register</span>
+</div>
+
+<!-- Chat -->
 <div class="container" id="chatDiv" style="display:none;">
   <h2 id="welcome"></h2>
-  <input id="searchNumber" placeholder="Enter number to chat">
+  <input id="searchEmail" type="email" placeholder="Friend's Email">
   <div class="chatbox" id="chatBox"></div>
   <input id="msgInput" placeholder="Type a message">
   <button id="sendBtn">Send</button>
+  <span class="link" onclick="logout()">Logout</span>
 </div>
 
 <script>
-// ✅ Your Firebase config
+// ✅ Firebase Config (replace with yours)
 const firebaseConfig = {
   apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
   authDomain: "csat-2d59c.firebaseapp.com",
+  databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "csat-2d59c",
   storageBucket: "csat-2d59c.firebasestorage.app",
   messagingSenderId: "250094013303",
@@ -55,67 +70,88 @@ const firebaseConfig = {
   measurementId: "G-YEJ32DTM64"
 };
 
-// ✅ Initialize Firebase (compat)
+// ✅ Initialize
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const auth = firebase.auth();
+const db   = firebase.database();
 
-const registerDiv = document.getElementById("registerDiv");
-const chatDiv     = document.getElementById("chatDiv");
-const registerBtn = document.getElementById("registerBtn");
-const sendBtn     = document.getElementById("sendBtn");
-const welcome     = document.getElementById("welcome");
-const chatBox     = document.getElementById("chatBox");
+// Elements
+const regDiv = document.getElementById("registerDiv");
+const logDiv = document.getElementById("loginDiv");
+const chatDiv= document.getElementById("chatDiv");
+const welcome= document.getElementById("welcome");
+const chatBox= document.getElementById("chatBox");
+let currentUser=null, chatRef=null;
 
-let currentUser = null;
-let chatRef = null;
+// UI Switchers
+function showLogin(){ regDiv.style.display="none"; logDiv.style.display="block"; }
+function showRegister(){ logDiv.style.display="none"; regDiv.style.display="block"; }
 
-registerBtn.onclick = () => {
-  const name   = document.getElementById("name").value.trim();
-  const number = document.getElementById("number").value.trim();
-  if(!name || !number){ alert("Please fill in all fields"); return; }
-
-  db.ref("users/"+number).set({ name });
-  currentUser = { name, number };
-
-  welcome.textContent = `Hello ${name}`;
-  registerDiv.style.display="none";
-  chatDiv.style.display="block";
+// Register
+document.getElementById("registerBtn").onclick=()=>{
+  const email=document.getElementById("regEmail").value.trim();
+  const pass=document.getElementById("regPass").value.trim();
+  const name=document.getElementById("regName").value.trim();
+  if(!email||!pass||!name){alert("Complete all fields");return;}
+  auth.createUserWithEmailAndPassword(email,pass)
+      .then(cred=>{
+         return db.ref("users/"+cred.user.uid).set({name,email});
+      })
+      .then(()=>alert("Registered! Please login."))
+      .catch(err=>alert(err.message));
 };
 
-document.getElementById("searchNumber").addEventListener("change", e=>{
-  const partner = e.target.value.trim();
+// Login
+document.getElementById("loginBtn").onclick=()=>{
+  const email=document.getElementById("logEmail").value.trim();
+  const pass=document.getElementById("logPass").value.trim();
+  auth.signInWithEmailAndPassword(email,pass)
+      .catch(err=>alert(err.message));
+};
+
+// Auth state
+auth.onAuthStateChanged(user=>{
+  if(user){
+    currentUser=user;
+    welcome.textContent="Welcome "+(user.email);
+    regDiv.style.display=logDiv.style.display="none";
+    chatDiv.style.display="block";
+  }else{
+    chatDiv.style.display="none";
+    logDiv.style.display="block";
+  }
+});
+
+// Logout
+function logout(){ auth.signOut(); }
+
+// Messaging
+document.getElementById("searchEmail").addEventListener("change",()=>{
+  const partner=document.getElementById("searchEmail").value.trim().replace(/\./g,'_');
   if(!partner) return;
   if(chatRef) chatRef.off();
-  const roomId = currentUser.number < partner ?
-                 currentUser.number + "_" + partner :
-                 partner + "_" + currentUser.number;
-
-  chatRef = db.ref("chats/"+roomId);
-  chatBox.innerHTML = "";
-
-  chatRef.on("child_added", snap=>{
-    const m = snap.val();
-    const div = document.createElement("div");
-    div.className = "message" + (m.sender===currentUser.number ? " self":"");
-    div.textContent = m.text;
+  const roomId = currentUser.uid < partner ? currentUser.uid+"_"+partner : partner+"_"+currentUser.uid;
+  chatRef=db.ref("chats/"+roomId);
+  chatBox.innerHTML="";
+  chatRef.on("child_added",snap=>{
+    const m=snap.val();
+    const div=document.createElement("div");
+    div.className="message"+(m.sender===currentUser.uid?" self":"");
+    div.textContent=m.text;
     chatBox.appendChild(div);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    chatBox.scrollTop=chatBox.scrollHeight;
   });
 });
 
-sendBtn.onclick = () => {
-  const text = document.getElementById("msgInput").value.trim();
-  const partner = document.getElementById("searchNumber").value.trim();
-  if(!text || !partner) return;
-
-  const roomId = currentUser.number < partner ?
-                 currentUser.number + "_" + partner :
-                 partner + "_" + currentUser.number;
-
+document.getElementById("sendBtn").onclick=()=>{
+  const text=document.getElementById("msgInput").value.trim();
+  const partner=document.getElementById("searchEmail").value.trim().replace(/\./g,'_');
+  if(!text||!partner)return;
+  const roomId = currentUser.uid < partner ? currentUser.uid+"_"+partner : partner+"_"+currentUser.uid;
   db.ref("chats/"+roomId).push({
-    sender: currentUser.number,
+    sender: currentUser.uid,
     text,
-    timestamp: Date.now()
+    time: Date.now()
   });
   document.getElementById("msgInput").value="";
 };
