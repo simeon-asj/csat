@@ -1,159 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DarkChat</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Chat</title>
 
-  <!-- Firebase SDKs (MUST come before your script.js) -->
-  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database.js"></script>
+<!-- ✅ Firebase compat SDKs (old global namespace) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
 
-  <style>
-    body {
-      margin:0;
-      background:#121212;
-      color:#fff;
-      font-family: Arial, sans-serif;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      height:100vh;
-    }
-    .register-box {
-      background:#1e1e1e;
-      padding:40px;
-      border-radius:12px;
-      text-align:center;
-      width:300px;
-      box-shadow:0 0 10px rgba(0,0,0,0.4);
-    }
-    input {
-      width:100%;
-      padding:12px;
-      margin:10px 0;
-      border:none;
-      border-radius:6px;
-      background:#2b2b2b;
-      color:#fff;
-    }
-    button {
-      width:100%;
-      padding:12px;
-      background:#5c6bc0;
-      border:none;
-      border-radius:6px;
-      color:#fff;
-      font-size:16px;
-      cursor:pointer;
-    }
-    button:hover {
-      background:#7986cb;
-    }
-    #chat-section {
-      display:none;
-      flex-direction:column;
-      width:100%;
-      max-width:400px;
-      height:80vh;
-      background:#1e1e1e;
-      border-radius:12px;
-      padding:20px;
-    }
-    #messages {
-      flex:1;
-      overflow-y:auto;
-      margin-bottom:10px;
-    }
-    .msg {
-      padding:8px;
-      background:#2b2b2b;
-      margin-bottom:8px;
-      border-radius:6px;
-    }
-  </style>
+<style>
+body{
+  background:#0f172a;
+  color:#e2e8f0;
+  font-family:Segoe UI,Arial,sans-serif;
+  margin:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.container{
+  background:#1e293b;
+  padding:25px;
+  border-radius:16px;
+  width:90%;
+  max-width:420px;
+  box-shadow:0 8px 20px rgba(0,0,0,.6);
+}
+h2{margin-top:0;text-align:center;}
+input,button{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border:none;
+  border-radius:8px;
+  font-size:16px;
+}
+input{background:#334155;color:#fff;}
+button{background:#3b82f6;color:#fff;cursor:pointer;}
+button:hover{background:#2563eb;}
+.chatbox{
+  background:#0f172a;
+  border-radius:10px;
+  padding:10px;
+  height:300px;
+  overflow-y:auto;
+  margin-bottom:10px;
+}
+.message{
+  margin:6px 0;
+  padding:8px 12px;
+  background:#334155;
+  border-radius:8px;
+}
+.self{background:#3b82f6;}
+</style>
 </head>
 <body>
 
-  <!-- Registration Box -->
-  <div class="register-box" id="register-section">
-    <h2>DarkChat</h2>
-    <input id="name" type="text" placeholder="Your Name" />
-    <input id="number" type="text" placeholder="Your Number" />
-    <button onclick="registerUser()">Register</button>
-  </div>
+<div class="container" id="registerDiv">
+  <h2>Register</h2>
+  <input id="name" placeholder="Name">
+  <input id="number" placeholder="Phone Number">
+  <button id="registerBtn">Register</button>
+</div>
 
-  <!-- Chat Box -->
-  <div id="chat-section">
-    <div id="messages"></div>
-    <input id="chatInput" type="text" placeholder="Type a message" onkeydown="if(event.key==='Enter')sendMessage()" />
-    <button onclick="sendMessage()">Send</button>
-  </div>
+<div class="container" id="chatDiv" style="display:none;">
+  <h2 id="welcome"></h2>
+  <input id="searchNumber" placeholder="Enter number to chat">
+  <div class="chatbox" id="chatBox"></div>
+  <input id="msgInput" placeholder="Type a message">
+  <button id="sendBtn">Send</button>
+</div>
 
-  <!-- Your App Script -->
-  <script>
-    // Your Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
-      authDomain: "csat-2d59c.firebaseapp.com",
-      databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "csat-2d59c",
-      storageBucket: "csat-2d59c.firebasestorage.app",
-      messagingSenderId: "250094013303",
-      appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
-      measurementId: "G-YEJ32DTM64"
-    };
+<script>
+// ✅ Your Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
+  authDomain: "csat-2d59c.firebaseapp.com",
+  projectId: "csat-2d59c",
+  storageBucket: "csat-2d59c.firebasestorage.app",
+  messagingSenderId: "250094013303",
+  appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
+  measurementId: "G-YEJ32DTM64"
+};
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+// ✅ Initialize
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    let currentUser = null;
+const registerDiv = document.getElementById("registerDiv");
+const chatDiv     = document.getElementById("chatDiv");
+const registerBtn = document.getElementById("registerBtn");
+const sendBtn     = document.getElementById("sendBtn");
+const welcome     = document.getElementById("welcome");
+const chatBox     = document.getElementById("chatBox");
 
-    function registerUser() {
-      const name   = document.getElementById('name').value.trim();
-      const number = document.getElementById('number').value.trim();
-      if(!name || !number) {
-        alert("Please enter name and number");
-        return;
-      }
-      currentUser = { name, number };
+let currentUser = null;
+let chatRef = null;
 
-      // Save user in DB
-      db.ref("users/" + number).set({ name });
+registerBtn.onclick = () => {
+  const name   = document.getElementById("name").value.trim();
+  const number = document.getElementById("number").value.trim();
+  if(!name || !number){ alert("Please fill in all fields"); return; }
 
-      // Show chat UI
-      document.getElementById('register-section').style.display = 'none';
-      document.getElementById('chat-section').style.display = 'flex';
+  // Save user if not exists
+  db.ref("users/"+number).set({ name });
 
-      // Start listening for messages
-      db.ref("messages").on("child_added", snap => {
-        const m = snap.val();
-        addMessage(m.name + ": " + m.text);
-      });
-    }
+  currentUser = { name, number };
+  welcome.textContent = `Hello ${name}`;
+  registerDiv.style.display="none";
+  chatDiv.style.display="block";
+};
 
-    function addMessage(text) {
-      const div = document.createElement('div');
-      div.className = 'msg';
-      div.textContent = text;
-      document.getElementById('messages').appendChild(div);
-      div.scrollIntoView();
-    }
+// listen for new chat partner
+document.getElementById("searchNumber").addEventListener("change", e=>{
+  const partner = e.target.value.trim();
+  if(!partner) return;
+  if(chatRef) chatRef.off();   // detach old listener
+  const roomId = currentUser.number < partner ?
+                 currentUser.number + "_" + partner :
+                 partner + "_" + currentUser.number;
 
-    function sendMessage() {
-      const input = document.getElementById('chatInput');
-      const text = input.value.trim();
-      if(text && currentUser){
-        db.ref("messages").push({
-          name: currentUser.name,
-          number: currentUser.number,
-          text: text,
-          timestamp: Date.now()
-        });
-        input.value = "";
-      }
-    }
-  </script>
+  chatRef = db.ref("chats/"+roomId);
+  chatBox.innerHTML = "";
+
+  chatRef.on("child_added", snap=>{
+    const m = snap.val();
+    const div = document.createElement("div");
+    div.className = "message" + (m.sender===currentUser.number ? " self":"");
+    div.textContent = m.text;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
+});
+
+// send message
+sendBtn.onclick = () => {
+  const text = document.getElementById("msgInput").value.trim();
+  const partner = document.getElementById("searchNumber").value.trim();
+  if(!text || !partner) return;
+
+  const roomId = currentUser.number < partner ?
+                 currentUser.number + "_" + partner :
+                 partner + "_" + currentUser.number;
+
+  db.ref("chats/"+roomId).push({
+    sender: currentUser.number,
+    text,
+    timestamp: Date.now()
+  });
+  document.getElementById("msgInput").value="";
+};
+</script>
 </body>
 </html>
