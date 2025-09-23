@@ -57,8 +57,9 @@ button:hover{background:#43a047;}
 
 <!-- ✅ Logged in user info -->
 <div class="uid-box">
-  <strong>Logged in User UID:</strong> <span id="userUid">Loading…</span><br>
-  <strong>Email:</strong> <span id="userEmail">Loading…</span>
+  <strong>Name:</strong> <span id="userName">Loading…</span><br>
+  <strong>Email:</strong> <span id="userEmail">Loading…</span><br>
+  <strong>Your ID Number:</strong> <span id="userIdNumber">Loading…</span>
 </div>
 
 <h2>🔎 Search User by ID Number</h2>
@@ -88,24 +89,35 @@ const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getDatabase(app);
 
-const resultDiv  = document.getElementById("result");
-const uidSpan    = document.getElementById("userUid");
-const emailSpan  = document.getElementById("userEmail");
+const resultDiv     = document.getElementById("result");
+const userNameSpan  = document.getElementById("userName");
+const userEmailSpan = document.getElementById("userEmail");
+const userIdSpan    = document.getElementById("userIdNumber");
 
-// ✅ Protect page & show current user info
-onAuthStateChanged(auth,(user)=>{
+// ✅ Protect page & load current user's data
+onAuthStateChanged(auth, async (user)=>{
   if(!user){
     window.location.href="index.html";
   } else {
-    uidSpan.textContent   = user.uid;
-    emailSpan.textContent = user.email || "No email";
+    userEmailSpan.textContent = user.email || "No email";
+
+    // 🔎 Get custom idNumber & name from DB
+    const snap = await get(ref(db,"users/"+user.uid));
+    if(snap.exists()){
+      const data = snap.val();
+      userNameSpan.textContent  = data.name || "(no name)";
+      userIdSpan.textContent    = data.idNumber || "No ID Number saved";
+    } else {
+      userNameSpan.textContent = "(user record not found)";
+      userIdSpan.textContent   = "N/A";
+    }
   }
 });
 
-// ✅ Search by custom ID in Realtime Database
+// ✅ Search by custom ID Number
 document.getElementById("searchBtn").addEventListener("click", async ()=>{
   const idInput = document.getElementById("searchId").value.trim();
-  if(!idInput){ resultDiv.textContent="Enter an ID."; return; }
+  if(!idInput){ resultDiv.textContent="Enter an ID Number."; return; }
 
   const snapshot = await get(ref(db,"users"));
   let found=false;
@@ -114,11 +126,11 @@ document.getElementById("searchBtn").addEventListener("click", async ()=>{
     if(data.idNumber === idInput){
       resultDiv.innerHTML = `<b>Name:</b> ${data.name}<br>
                              <b>Email:</b> ${data.email}<br>
-                             <b>ID:</b> ${data.idNumber}`;
+                             <b>ID Number:</b> ${data.idNumber}`;
       found=true;
     }
   });
-  if(!found) resultDiv.textContent="❌ No user found for this ID.";
+  if(!found) resultDiv.textContent="❌ No user found for this ID Number.";
 });
 
 // ✅ Logout
