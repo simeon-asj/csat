@@ -18,7 +18,10 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;background:var(--bg);color:#111}
+
     .app{display:flex;max-width:1100px;height:86vh;margin:30px auto;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+
+    /* Sidebar */
     .sidebar{width:320px;background:linear-gradient(180deg,#fff,#fbfdff);border-right:1px solid #e6e9ee;display:flex;flex-direction:column}
     .sidebar .search{padding:18px}
     .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e4e7eb;background:#f7f9fc}
@@ -29,218 +32,228 @@
     .meta{flex:1;display:flex;justify-content:space-between;align-items:center}
     .meta .name{font-weight:600}
     .meta .last{font-size:13px;color:var(--muted)}
+
+    /* Main area */
     .main{flex:1;display:flex;flex-direction:column;background:var(--panel)}
     .header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid #eef1f5}
     .header .title{font-weight:600}
     .header .subtitle{font-size:13px;color:var(--muted);margin-left:8px}
     .messages{flex:1;padding:20px;overflow:auto;background:linear-gradient(180deg, #f7fbff 0%, transparent 40%)}
+
     .bubble-row{display:flex;margin-bottom:10px;align-items:flex-end;position:relative}
     .bubble{max-width:70%;padding:10px 14px;border-radius:18px;line-height:1.2;font-size:14px;position:relative}
     .from{background:var(--bubble);border-bottom-left-radius:4px}
     .to{background:var(--me);margin-left:auto;border-bottom-right-radius:4px}
     .time{display:block;font-size:11px;color:var(--muted);margin-top:6px}
+
     .delete-btn,.edit-btn{position:absolute;top:-8px;background:#555;color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;display:none;}
     .delete-btn{right:-8px;background:#ff5c5c;}
     .edit-btn{right:18px;background:#0078ff;}
     .bubble-row:hover .delete-btn,.bubble-row:hover .edit-btn{display:block;}
+
+    /* Input area */
     .composer{padding:12px;border-top:1px solid #eef1f5;display:flex;gap:10px;align-items:center}
     .composer .actions{display:flex;gap:8px}
     .composer input[type='text']{flex:1;padding:10px 12px;border-radius:999px;border:1px solid #e8ebf0;background:#fff}
     .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
-    .muted{color:var(--muted);font-size:13px}
-    .typing{font-size:13px;color:var(--muted);padding-left:8px}
+
+    /* responsive */
     @media (max-width:880px){.sidebar{display:none}.app{max-width:100%;height:100vh;border-radius:0}}
   </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="search"><input id="search" placeholder="Search or start new chat" /></div>
-      <div class="contacts" id="contacts"></div>
-    </aside>
-    <main class="main">
-      <div class="header">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div class="avatar" id="chatAvatar">A</div>
-          <div>
-            <div class="title" id="chatName">Select a conversation</div>
-            <div class="subtitle" id="chatStatus">Offline</div>
-          </div>
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-          <button class="btn" id="newChat">New Chat</button>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="search">
+      <input id="search" placeholder="Search or start new chat" />
+    </div>
+    <div class="contacts" id="contacts"></div>
+  </aside>
+
+  <main class="main">
+    <div class="header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="avatar" id="chatAvatar">A</div>
+        <div>
+          <div class="title" id="chatName">Select a conversation</div>
+          <div class="subtitle" id="chatStatus">Offline</div>
         </div>
       </div>
-      <div class="messages" id="messages"></div>
-      <div class="composer">
-        <div class="actions">
-          <label title="Attach file" style="cursor:pointer"><input id="fileInput" type="file" style="display:none" />📎</label>
-          <button id="emojiBtn" title="Emoji">😊</button>
-        </div>
-        <input id="msgInput" type="text" placeholder="Type a message... (press Enter to send)" />
-        <button class="btn" id="sendBtn">Send</button>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="composer">
+      <div class="actions">
+        <label title="Attach file" style="cursor:pointer">
+          <input id="fileInput" type="file" style="display:none" />
+          📎
+        </label>
+        <button id="emojiBtn" title="Emoji">😊</button>
       </div>
-    </main>
-  </div>
+      <input id="msgInput" type="text" placeholder="Type a message... (press Enter to send)" />
+      <button class="btn" id="sendBtn">Send</button>
+    </div>
+  </main>
+</div>
 
-  <script type="module">
-    // === Import Firebase ===
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, onValue, push, update, remove, child, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, child, get, push, update, onChildAdded, onValue, remove, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    // === Your Firebase Config ===
-    const firebaseConfig = {
-      apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
-      authDomain: "csat-2d59c.firebaseapp.com",
-      databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "csat-2d59c",
-      storageBucket: "csat-2d59c.firebasedestorage.app",
-      messagingSenderId: "250094013303",
-      appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
-      measurementId: "G-YEJ32DTM64"
-    };
+  // 🔹 Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
+    authDomain: "csat-2d59c.firebaseapp.com",
+    databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "csat-2d59c",
+    storageBucket: "csat-2d59c.firebasedestorage.app",
+    messagingSenderId: "250094013303",
+    appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
+    measurementId: "G-YEJ32DTM64"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
 
-    // === UI Elements ===
-    const contactsEl = document.getElementById("contacts");
-    const messagesEl = document.getElementById("messages");
-    const chatNameEl = document.getElementById("chatName");
-    const chatAvatarEl = document.getElementById("chatAvatar");
-    const chatStatusEl = document.getElementById("chatStatus");
-    const msgInput = document.getElementById("msgInput");
-    const sendBtn = document.getElementById("sendBtn");
+  const contactsEl = document.getElementById('contacts');
+  const messagesEl = document.getElementById('messages');
+  const chatNameEl = document.getElementById('chatName');
+  const chatAvatarEl = document.getElementById('chatAvatar');
+  const chatStatusEl = document.getElementById('chatStatus');
+  const msgInput = document.getElementById("msgInput");
+  const sendBtn = document.getElementById("sendBtn");
 
-    let currentUser = null;
-    let activeChatId = null;
-    let chatsMeta = {};
+  let currentUser = null;
+  let activeChatId = null;
+  let activeOtherUid = null;
 
-    // === LOGIN ===
-    onAuthStateChanged(auth, user => {
-      if (!user) {
-        alert("Please log in first!");
-        return;
-      }
+  // === Auth ===
+  onAuthStateChanged(auth, user => {
+    if (user) {
       currentUser = user;
       loadChatList();
-    });
-
-    // === CONTACTS (chat list) ===
-    function loadChatList() {
-      onValue(ref(db, "chatsMeta/" + currentUser.uid), snap => {
-        chatsMeta = snap.val() || {};
-        renderContacts();
-      });
+    } else {
+      alert("Not logged in!");
     }
+  });
 
-    function renderContacts(filter = "") {
+  // === Load Chat List ===
+  function loadChatList() {
+    const metaRef = ref(db, "chatsMeta/" + currentUser.uid);
+    onValue(metaRef, snap => {
       contactsEl.innerHTML = "";
-      const chatIds = Object.keys(chatsMeta || {});
-      chatIds.forEach(chatId => {
-        const meta = chatsMeta[chatId];
+      if (!snap.exists()) return;
+
+      const chats = snap.val();
+      Object.keys(chats).forEach(chatId => {
+        const meta = chats[chatId];
         const ids = chatId.split("_");
         const otherUid = ids[0] === currentUser.uid ? ids[1] : ids[0];
         get(child(ref(db), "users/" + otherUid)).then(uSnap => {
           if (!uSnap.exists()) return;
           const u = uSnap.val();
-          if (!u.name.toLowerCase().includes(filter.toLowerCase())) return;
-
           const el = document.createElement("div");
           el.className = "contact";
+          const initials = (u.name || "U").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
           el.innerHTML = `
-            <div class="avatar">${(u.name[0] || "?").toUpperCase()}</div>
+            <div class="avatar">${initials}</div>
             <div class="meta">
               <div style="display:flex;flex-direction:column">
-                <div class="name">${u.name}</div>
+                <div class="name">${u.name || "Unknown"}</div>
                 <div class="last muted">${meta.latestMsgText || ""}</div>
               </div>
-              <div class="time muted">${u.online ? "online" : ""}</div>
+              <div class="time muted">${u.online ? "Online" : ""}</div>
             </div>
           `;
-          el.onclick = () => openChat(otherUid, chatId, u);
+          el.onclick = () => openChat(chatId, otherUid, u.name, initials, u.online);
           contactsEl.appendChild(el);
         });
       });
+    });
+  }
+
+  // === Open Chat ===
+  function openChat(chatId, otherUid, otherName, initials, online) {
+    activeChatId = chatId;
+    activeOtherUid = otherUid;
+    chatNameEl.textContent = otherName;
+    chatAvatarEl.textContent = initials;
+    chatStatusEl.textContent = online ? "Online" : "Offline";
+    messagesEl.innerHTML = "";
+    const msgsRef = ref(db, "messages/" + chatId);
+    onChildAdded(msgsRef, snap => {
+      const m = snap.val();
+      renderMessage(snap.key, m.from, m.text, m.time);
+    });
+  }
+
+  // === Render Message ===
+  function renderMessage(key, from, text, time) {
+    const row = document.createElement("div");
+    row.className = "bubble-row";
+    const bubble = document.createElement("div");
+    bubble.className = "bubble " + (from === currentUser.uid ? "to" : "from");
+    bubble.innerHTML = `<div>${escapeHtml(text)}</div><div class='time'>${time}</div>`;
+
+    // Allow delete/edit only for my messages
+    if (from === currentUser.uid) {
+      const del = document.createElement("button");
+      del.className = "delete-btn";
+      del.textContent = "×";
+      del.onclick = () => remove(ref(db, "messages/" + activeChatId + "/" + key));
+
+      const edit = document.createElement("button");
+      edit.className = "edit-btn";
+      edit.textContent = "✎";
+      edit.onclick = () => {
+        const newTxt = prompt("Edit message:", text);
+        if (newTxt !== null) {
+          set(ref(db, "messages/" + activeChatId + "/" + key), {
+            from, text: newTxt, time
+          });
+        }
+      };
+      row.appendChild(del);
+      row.appendChild(edit);
     }
 
-    document.getElementById("search").addEventListener("input", e => renderContacts(e.target.value));
+    row.appendChild(bubble);
+    if (from === currentUser.uid) row.style.justifyContent = "flex-end";
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
 
-    // === OPEN CHAT ===
-    function openChat(otherUid, chatId, userObj) {
-      activeChatId = chatId;
-      chatNameEl.textContent = userObj.name;
-      chatAvatarEl.textContent = (userObj.name[0] || "?").toUpperCase();
-      chatStatusEl.textContent = userObj.online ? "online" : "offline";
-      loadMessages(chatId);
-    }
+  // === Send Message ===
+  sendBtn.addEventListener("click", () => {
+    const text = msgInput.value.trim();
+    if (!text || !activeChatId) return;
+    const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 
-    // === MESSAGES ===
-    function loadMessages(chatId) {
-      messagesEl.innerHTML = "";
-      onValue(ref(db, "messages/" + chatId), snap => {
-        messagesEl.innerHTML = "";
-        snap.forEach(msgSnap => {
-          const msg = msgSnap.val();
-          renderMessage(msg, msgSnap.key, chatId);
-        });
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      });
-    }
-
-    function renderMessage(m, msgId, chatId) {
-      const row = document.createElement("div");
-      row.className = "bubble-row";
-      const bubble = document.createElement("div");
-      bubble.className = "bubble " + (m.from === currentUser.uid ? "to" : "from");
-      bubble.innerHTML = `<div>${escapeHtml(m.text)}</div><div class="time">${m.time || ""}</div>`;
-
-      if (m.from === currentUser.uid) {
-        const del = document.createElement("button");
-        del.className = "delete-btn";
-        del.textContent = "×";
-        del.onclick = () => remove(ref(db, "messages/" + chatId + "/" + msgId));
-
-        const edit = document.createElement("button");
-        edit.className = "edit-btn";
-        edit.textContent = "✎";
-        edit.onclick = () => {
-          const newTxt = prompt("Edit message:", m.text);
-          if (newTxt) update(ref(db, "messages/" + chatId + "/" + msgId), { text: newTxt });
-        };
-
-        row.appendChild(edit);
-        row.appendChild(del);
-      }
-
-      row.appendChild(bubble);
-      messagesEl.appendChild(row);
-    }
-
-    // === SEND ===
-    sendBtn.addEventListener("click", () => {
-      const text = msgInput.value.trim();
-      if (!text || !activeChatId) return;
-      const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-      push(ref(db, "messages/" + activeChatId), {
-        from: currentUser.uid,
-        text,
-        time: now
-      });
-      update(ref(db, "chatsMeta/" + currentUser.uid + "/" + activeChatId), { latestMsgText: text });
-      msgInput.value = "";
+    push(ref(db, "messages/" + activeChatId), {
+      from: currentUser.uid,
+      text,
+      time: now
     });
 
-    msgInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendBtn.click();
-      }
-    });
+    const metaUpdate = { latestMsgText: text, latestMsgTs: Date.now() };
+    update(ref(db, "chatsMeta/" + currentUser.uid + "/" + activeChatId), metaUpdate);
+    update(ref(db, "chatsMeta/" + activeOtherUid + "/" + activeChatId), metaUpdate);
 
-    function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-  </script>
+    msgInput.value = "";
+  });
+
+  msgInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+
+  function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+</script>
 </body>
 </html>
