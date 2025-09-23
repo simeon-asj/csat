@@ -82,11 +82,6 @@
     .chat-item:hover {
       background: #2a2a2a;
     }
-    .chat-item .top-line {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
     .chat-item.unread .name-id {
       font-weight: bold;
     }
@@ -116,6 +111,7 @@
       font-weight: 600;
       font-size: 14px;
       border-bottom: 1px solid #262626;
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -289,11 +285,7 @@
         if (!ids.includes(currentUser.uid)) return;
 
         if (!chatsMeta[chatId]) {
-          chatsMeta[chatId] = {
-            latestMsgTs: 0,
-            latestMsgText: "",
-            unread: false
-          };
+          chatsMeta[chatId] = { latestMsgTs: 0, latestMsgText: "", unread: false };
         }
 
         const msgsRef = ref(db, `chats/${chatId}/messages`);
@@ -307,21 +299,19 @@
           if (m.sender !== currentUser.uid && activeChatId !== chatId) {
             chatsMeta[chatId].unread = true;
             notifSound.play().catch(() => {});
-            renderChatList();
           }
           if (activeChatId === chatId) {
             chatsMeta[chatId].unread = false;
-            renderChatList();
           }
+          renderChatList();
         });
       });
-
       renderChatList();
     });
 
     userIdEl.addEventListener("click", () => {
       navigator.clipboard.writeText(userIdEl.textContent)
-        .then(() => alert("User ID copied to clipboard!"))
+        .then(() => alert("User ID copied!"))
         .catch(() => alert("Failed to copy ID."));
     });
 
@@ -336,7 +326,7 @@
       const sorted = sortChatIdsByLatest(chatIds);
 
       sorted.forEach(chatId => {
-        const meta = chatsMeta[chatId] || { latestMsgTs: 0, latestMsgText: "", unread: false };
+        const meta = chatsMeta[chatId];
         const ids = chatId.split("_");
         const otherUid = ids[0] === currentUser.uid ? ids[1] : ids[0];
 
@@ -368,7 +358,6 @@
           div.appendChild(msgPreview);
 
           div.onclick = () => openChat(otherUid, chatId, u.name);
-
           chatList.appendChild(div);
         });
       });
@@ -379,17 +368,12 @@
       chatHeader.textContent = `Chat with ${otherName}`;
       messagesDiv.innerHTML = "";
 
-      if (activeMessagesRef) {
-        off(activeMessagesRef, "child_added");
-      }
-
+      if (activeMessagesRef) off(activeMessagesRef, "child_added");
       activeMessagesRef = ref(db, `chats/${chatId}/messages`);
 
       get(activeMessagesRef).then(snap => {
         messagesDiv.innerHTML = "";
-        snap.forEach(childSnap => {
-          appendMessage(childSnap.val());
-        });
+        snap.forEach(childSnap => appendMessage(childSnap.val()));
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
 
@@ -422,11 +406,7 @@
       const text = msgInput.value.trim();
       if (!text) return;
       const newMsgRef = push(ref(db, `chats/${activeChatId}/messages`));
-      await set(newMsgRef, {
-        text,
-        sender: currentUser.uid,
-        ts: Date.now()
-      });
+      await set(newMsgRef, { text, sender: currentUser.uid, ts: Date.now() });
       msgInput.value = "";
     };
 
