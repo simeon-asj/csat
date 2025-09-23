@@ -2,190 +2,132 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Chat Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Dashboard</title>
 <style>
-  body{margin:0;font-family:sans-serif;background:#111;color:#fff;display:flex;height:100vh}
-  /* left panel */
-  #sidebar{width:250px;background:#1e1e1e;display:flex;flex-direction:column}
-  #searchBox{margin:10px;padding:8px;border:none;border-radius:4px}
-  #chatList{flex:1;overflow-y:auto}
-  .chatItem{padding:10px;border-bottom:1px solid #333;cursor:pointer}
-  .chatItem:hover{background:#333}
-  /* right panel */
-  #chatPanel{flex:1;display:flex;flex-direction:column}
-  #messages{flex:1;padding:10px;overflow-y:auto}
-  .msg{margin:4px 0;max-width:60%;padding:8px;border-radius:8px}
-  .me{background:#2ecc71;margin-left:auto}
-  .them{background:#555}
-  #inputBar{display:flex;padding:10px;background:#1e1e1e}
-  #textInput{flex:1;padding:8px;border:none;border-radius:4px}
-  #sendBtn,#imgBtn{margin-left:5px;padding:8px 12px;border:none;border-radius:4px;background:#2ecc71;color:#fff;cursor:pointer}
-  img.chat-img{max-width:200px;border-radius:6px;display:block;margin-top:4px}
+body{
+  margin:0;
+  background:#121212;
+  color:#fff;
+  font-family:Poppins, sans-serif;
+  display:flex;
+  height:100vh;
+}
+.sidebar{
+  width:260px;
+  background:#1c1c1c;
+  display:flex;
+  flex-direction:column;
+  border-right:1px solid #333;
+}
+.sidebar h2{
+  padding:15px;margin:0;
+  background:#181818;
+  border-bottom:1px solid #333;
+}
+.searchBox{
+  display:flex;
+  padding:10px;
+  gap:6px;
+  border-bottom:1px solid #333;
+}
+.searchBox input{
+  flex:1;padding:6px;
+  border:none;border-radius:4px;
+  background:#262626;color:#fff;
+}
+.searchBox button{
+  padding:6px 10px;
+  border:none;border-radius:4px;
+  background:#4CAF50;color:#fff;
+  cursor:pointer;
+}
+#chatList{flex:1;overflow-y:auto;}
+.chat-item{
+  padding:12px;border-bottom:1px solid #333;
+  cursor:pointer;
+}
+.chat-item:hover{background:#333;}
+
+.main{flex:1;display:flex;flex-direction:column;position:relative;}
+.header{
+  padding:15px;
+  border-bottom:1px solid #333;
+  background:#181818;
+  text-align:center;
+}
+.messages{flex:1;padding:15px;overflow-y:auto;}
+.msg{
+  padding:8px 12px;
+  margin-bottom:8px;
+  max-width:60%;
+  border-radius:8px;
+  word-wrap:break-word;
+}
+.msg.me{background:#4CAF50;margin-left:auto;}
+.msg.other{background:#262626;margin-right:auto;}
+
+.inputRow{
+  display:flex;
+  padding:10px;
+  gap:8px;
+  border-top:1px solid #333;
+  background:#181818;
+}
+.inputRow input{
+  flex:1;padding:10px;
+  border:none;border-radius:6px;
+  background:#262626;color:#fff;
+}
+.inputRow button{
+  padding:10px 20px;
+  background:#4CAF50;color:#fff;
+  border:none;border-radius:6px;
+  cursor:pointer;
+}
+.inputRow button:hover{background:#43a047;}
+
+.logout{
+  position:absolute;
+  top:10px;right:10px;
+  background:#e53935;
+  border:none;padding:8px 14px;
+  color:#fff;border-radius:6px;
+  cursor:pointer;
+}
+.logout:hover{background:#d32f2f;}
 </style>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 </head>
 <body>
-  <div id="sidebar">
-    <input id="searchBox" placeholder="Search ID…">
-    <div id="chatList"></div>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>Chats</h2>
+  <div class="searchBox">
+    <input id="searchUser" placeholder="Search ID…">
+    <button id="searchBtn">Search</button>
   </div>
+  <div id="chatList"></div>
+</div>
 
-  <div id="chatPanel">
-    <div id="messages"></div>
-    <div id="inputBar">
-      <input id="textInput" placeholder="Type a message">
-      <button id="imgBtn">📷</button>
-      <button id="sendBtn">Send</button>
-      <input type="file" id="imgFile" accept="image/*" style="display:none">
-    </div>
+<!-- Main Chat Area -->
+<div class="main">
+  <div id="chatHeader" class="header">Select a user</div>
+  <div id="messages" class="messages"></div>
+  <div class="inputRow">
+    <input id="msgInput" placeholder="Type a message">
+    <button id="sendBtn">Send</button>
   </div>
+</div>
 
-<script>
-/* ---------- Firebase init ---------- */
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
-const storage = firebase.storage();
+<button id="logoutBtn" class="logout">Logout</button>
 
-let currentUser=null,currentChat=null;
-
-/* ---------- Auth (anonymous for demo) ---------- */
-auth.signInAnonymously().then(()=>console.log("Signed in")).catch(console.error);
-
-/* ---------- UI elements ---------- */
-const chatList=document.getElementById("chatList");
-const messagesDiv=document.getElementById("messages");
-const textInput=document.getElementById("textInput");
-const sendBtn=document.getElementById("sendBtn");
-const searchBox=document.getElementById("searchBox");
-const imgBtn=document.getElementById("imgBtn");
-const imgFile=document.getElementById("imgFile");
-
-/* ---------- Load chats ---------- */
-auth.onAuthStateChanged(user=>{
-  if(!user) return;
-  currentUser=user.uid;
-
-  // show only conversations where current user participated
-  db.collection("conversations")
-    .where("members","array-contains",currentUser)
-    .orderBy("lastAt","desc")
-    .onSnapshot(snap=>{
-      chatList.innerHTML="";
-      snap.forEach(doc=>{
-        const data=doc.data();
-        const other = data.members.find(m=>m!==currentUser);
-        const item=document.createElement("div");
-        item.className="chatItem";
-        item.textContent=other;
-        item.onclick=()=>openChat(doc.id,other);
-        chatList.appendChild(item);
-      });
-    });
-});
-
-/* ---------- Search user id to start chat ---------- */
-searchBox.addEventListener("keypress",e=>{
-  if(e.key==="Enter" && searchBox.value.trim()){
-    const otherId = searchBox.value.trim();
-    startChat(otherId);
-    searchBox.value="";
-  }
-});
-
-function startChat(otherId){
-  // look for existing convo first
-  db.collection("conversations")
-    .where("members","in",[[currentUser,otherId],[otherId,currentUser]])
-    .get().then(q=>{
-      if(!q.empty){
-        openChat(q.docs[0].id,otherId);
-      }else{
-        db.collection("conversations").add({
-          members:[currentUser,otherId],
-          lastAt:firebase.firestore.FieldValue.serverTimestamp()
-        }).then(doc=>openChat(doc.id,otherId));
-      }
-    });
-}
-
-/* ---------- Open chat ---------- */
-let unsubscribeMsg=null;
-function openChat(chatId,otherId){
-  currentChat=chatId;
-  messagesDiv.innerHTML="";
-  if(unsubscribeMsg) unsubscribeMsg();
-  unsubscribeMsg=db.collection("conversations").doc(chatId)
-    .collection("messages").orderBy("created")
-    .onSnapshot(snap=>{
-      messagesDiv.innerHTML="";
-      snap.forEach(doc=>{
-        const d=doc.data();
-        const div=document.createElement("div");
-        div.className="msg "+(d.from===currentUser?"me":"them");
-        if(d.text) div.textContent=d.text;
-        if(d.imageUrl){
-          const img=document.createElement("img");
-          img.src=d.imageUrl;
-          img.className="chat-img";
-          div.appendChild(img);
-        }
-        messagesDiv.appendChild(div);
-      });
-      messagesDiv.scrollTop=messagesDiv.scrollHeight;
-    });
-}
-
-/* ---------- Send text ---------- */
-function sendText(){
-  if(!currentChat || !textInput.value.trim()) return;
-  const txt=textInput.value;
-  textInput.value="";
-  const msg={
-    from:currentUser,text:txt,
-    created:firebase.firestore.FieldValue.serverTimestamp()
-  };
-  db.collection("conversations").doc(currentChat)
-    .collection("messages").add(msg);
-  db.collection("conversations").doc(currentChat)
-    .update({lastAt:firebase.firestore.FieldValue.serverTimestamp()});
-}
-sendBtn.onclick=sendText;
-textInput.addEventListener("keypress",e=>{if(e.key==="Enter")sendText();});
-
-/* ---------- Send image ---------- */
-imgBtn.onclick=()=>imgFile.click();
-imgFile.onchange=()=>{
-  if(!currentChat || !imgFile.files[0]) return;
-  const file=imgFile.files[0];
-  const ref=storage.ref("chatImages/"+Date.now()+"_"+file.name);
-  ref.put(file).then(()=>ref.getDownloadURL()).then(url=>{
-    db.collection("conversations").doc(currentChat)
-      .collection("messages").add({
-        from:currentUser,imageUrl:url,
-        created:firebase.firestore.FieldValue.serverTimestamp()
-      });
-    db.collection("conversations").doc(currentChat)
-      .update({lastAt:firebase.firestore.FieldValue.serverTimestamp()});
-  });
-};
-
-
-  <script type="module">
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-import { getDatabase, ref, get, child, push, set, onChildAdded, query, orderByChild } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+import { getDatabase, ref, get, child, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
+// 🔑 Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
   authDomain: "csat-2d59c.firebaseapp.com",
@@ -196,6 +138,107 @@ const firebaseConfig = {
   appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
   measurementId: "G-YEJ32DTM64"
 };
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getDatabase(app);
+
+const logoutBtn   = document.getElementById("logoutBtn");
+const chatList    = document.getElementById("chatList");
+const msgInput    = document.getElementById("msgInput");
+const sendBtn     = document.getElementById("sendBtn");
+const chatHeader  = document.getElementById("chatHeader");
+const messagesDiv = document.getElementById("messages");
+const searchBtn   = document.getElementById("searchBtn");
+const searchInput = document.getElementById("searchUser");
+
+let currentUser, activeChatId = null;
+
+// 🔒 Protect page
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return window.location.href = "index.html";
+  currentUser = user;
+  loadRecentChats();
+});
+
+// 🚪 Logout
+logoutBtn.onclick = async ()=>{ await signOut(auth); location.href="index.html"; };
+
+// 📜 Load chats that already have messages
+function loadRecentChats(){
+  chatList.innerHTML = "";
+  const chatsRef = ref(db,"chats");
+  onChildAdded(chatsRef, async snap=>{
+    const chatId = snap.key;
+    const data = snap.val();
+    if(!data.messages) return;          // skip empty chats
+    const ids = chatId.split("_");
+    if(!ids.includes(currentUser.uid)) return;
+    const otherUid = ids[0]===currentUser.uid ? ids[1] : ids[0];
+    const uSnap = await get(child(ref(db),"users/"+otherUid));
+    if(!uSnap.exists()) return;
+    const u = uSnap.val();
+    const div = document.createElement("div");
+    div.className="chat-item";
+    div.innerHTML = `<b>${u.name}</b><br>${u.idNumber}`;
+    div.onclick = ()=> openChat(chatId,u);
+    chatList.appendChild(div);
+  });
+}
+
+// 💬 Open a chat
+function openChat(chatId,u){
+  activeChatId = chatId;
+  chatHeader.textContent = `${u.name} (${u.idNumber})`;
+  messagesDiv.innerHTML = "";
+  const msgsRef = ref(db,`chats/${chatId}/messages`);
+  onChildAdded(msgsRef, snap=>{
+    const m = snap.val();
+    const div = document.createElement("div");
+    div.className = m.sender===currentUser.uid ? "msg me" : "msg other";
+    div.textContent = m.text;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  });
+}
+
+// 📤 Send message
+function sendMessage(){
+  if(!activeChatId || !msgInput.value.trim()) return;
+  push(ref(db,`chats/${activeChatId}/messages`),{
+    sender: currentUser.uid,
+    text: msgInput.value,
+    ts: Date.now()
+  });
+  msgInput.value="";
+}
+sendBtn.onclick = sendMessage;
+msgInput.addEventListener("keydown", e=>{
+  if(e.key==="Enter"){ e.preventDefault(); sendMessage(); }
+});
+
+// 🔎 Search user by ID to start a chat
+searchBtn.onclick = async ()=>{
+  const id = searchInput.value.trim();
+  if(!id) return;
+  const usersSnap = await get(ref(db,"users"));
+  let found=null;
+  usersSnap.forEach(childSnap=>{
+    const data = childSnap.val();
+    if(data.idNumber === id) found = {uid:childSnap.key, ...data};
+  });
+  if(found){
+    const chatId = currentUser.uid < found.uid 
+      ? `${currentUser.uid}_${found.uid}` 
+      : `${found.uid}_${currentUser.uid}`;
+    // create empty chat if none
+    await set(ref(db,"chats/"+chatId),{});
+    openChat(chatId,found);
+  } else {
+    alert("User ID not found");
+  }
+};
 </script>
+
 </body>
 </html>
