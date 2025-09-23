@@ -91,14 +91,14 @@ button,input{outline:none;border:none;font-family:inherit}
 .logout:hover{background:#d32f2f;}
 .messages{
   flex:1;
-  padding:12px;
+  padding:10px;        /* slightly smaller padding */
   overflow-y:auto;
   display:flex;
   flex-direction:column;
-  gap:6px;
+  gap:2px;             /* was 6px → tighter vertical spacing */
 }
 .msg{
-  padding:6px 10px;              /* tighter bubble */
+  padding:4px 8px;     /* was 6px 10px → smaller bubble padding */
   border-radius:14px;
   max-width:65%;
   word-wrap:break-word;
