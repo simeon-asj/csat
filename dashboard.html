@@ -154,6 +154,30 @@ sendBtn.onclick = async ()=>{
   });
   msgInput.value="";
 };
+
+
+  // Send a message (keep your existing sendBtn.onclick)
+sendBtn.onclick = sendMessage;
+
+function sendMessage(){
+  if(!activeChatId || !msgInput.value.trim()) return;
+  push(ref(db,`chats/${activeChatId}/messages`),{
+    sender: currentUser.uid,
+    text: msgInput.value,
+    ts: Date.now()
+  });
+  msgInput.value="";
+}
+
+// ✅ NEW: send when pressing Enter
+msgInput.addEventListener("keydown", e=>{
+  if(e.key === "Enter"){
+    e.preventDefault();   // stop newline
+    sendMessage();
+  }
+});
+
+  
 </script>
 </body>
 </html>
