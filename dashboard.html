@@ -3,165 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Messenger Dashboard</title>
+<title>User Dashboard</title>
 <style>
-body{
-  margin:0;
-  font-family:Poppins, sans-serif;
-  background:#0d0d0d;
-  color:#fff;
-  display:flex;
-  height:100vh;
-}
-.sidebar{
-  width:280px;
-  background:#1a1a1a;
-  display:flex;
-  flex-direction:column;
-  border-right:1px solid #2a2a2a;
-}
-.sidebar-header{
-  padding:15px;
-  font-weight:bold;
-  font-size:20px;
-  border-bottom:1px solid #2a2a2a;
-}
-.search-box{
-  padding:10px;
-}
-.search-box input{
-  width:100%;
-  padding:8px 12px;
-  border:none;
-  border-radius:20px;
-  background:#262626;
-  color:#fff;
-}
-.chat-list{
-  flex:1;
-  overflow-y:auto;
-}
-.chat-item{
-  padding:12px 15px;
-  border-bottom:1px solid #2a2a2a;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  transition:background 0.2s;
-}
+/* ====== Global ====== */
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins, sans-serif;}
+body{background:#121212;color:#fff;height:100vh;display:flex;}
+/* ====== Sidebar ====== */
+.sidebar{width:260px;background:#1e1e1e;display:flex;flex-direction:column;}
+.sidebar h2{padding:20px;font-size:18px;border-bottom:1px solid #333;}
+#chatList{flex:1;overflow-y:auto;}
+.chat-item{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #2a2a2a;cursor:pointer;}
 .chat-item:hover{background:#2a2a2a;}
-.chat-item.active{background:#333;}
-.chat-avatar{
-  width:36px;height:36px;
-  border-radius:50%;
-  background:#555;
-  margin-right:12px;
-}
-.chat-info strong{display:block;font-size:15px;}
-.chat-info small{color:#aaa;font-size:12px;}
-
-.main{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  background:#0d0d0d;
-}
-.chat-header{
-  padding:15px;
-  border-bottom:1px solid #2a2a2a;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.chat-messages{
-  flex:1;
-  padding:20px;
-  overflow-y:auto;
-  background:#101010;
-  display:flex;
-  flex-direction:column;
-}
-.message{
-  max-width:60%;
-  padding:10px 14px;
-  border-radius:16px;
-  margin:4px 0;
-  word-wrap:break-word;
-}
-.message.me{
-  background:#4caf50;
-  color:#fff;
-  align-self:flex-end;
-}
-.message.them{
-  background:#2a2a2a;
-  align-self:flex-start;
-}
-.chat-input{
-  padding:12px;
-  border-top:1px solid #2a2a2a;
-  display:flex;
-}
-.chat-input input{
-  flex:1;
-  padding:10px 15px;
-  border:none;
-  border-radius:20px;
-  background:#262626;
-  color:#fff;
-}
-.chat-input button{
-  margin-left:10px;
-  padding:10px 20px;
-  border:none;
-  border-radius:20px;
-  background:#4caf50;
-  color:#fff;
-  cursor:pointer;
-}
-.logout{
-  position:absolute;
-  top:15px;
-  right:15px;
-  background:#e53935;
-  border:none;
-  padding:8px 15px;
-  border-radius:20px;
-  cursor:pointer;
-}
+.chat-info{margin-left:10px;}
+.chat-info strong{display:block;font-size:14px;}
+.chat-info small{font-size:12px;color:#aaa;}
+/* ====== Main Chat ====== */
+.main{flex:1;display:flex;flex-direction:column;background:#181818;}
+.topbar{padding:15px 20px;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center;}
+#chatWith{font-size:16px;font-weight:600;}
+.logout{background:#e53935;border:none;padding:8px 14px;border-radius:6px;color:#fff;cursor:pointer;}
 .logout:hover{background:#d32f2f;}
+.messages{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;}
+.message{max-width:70%;padding:10px 14px;margin-bottom:8px;border-radius:14px;line-height:1.4;font-size:14px;}
+.message.me{background:#4CAF50;margin-left:auto;}
+.message.them{background:#262626;}
+/* ====== Input ====== */
+.input-area{display:flex;padding:15px;background:#1e1e1e;border-top:1px solid #333;}
+#msgInput{flex:1;padding:12px 16px;background:#262626;border:none;border-radius:20px;color:#fff;}
+#msgInput:focus{outline:none;background:#333;}
+#sendBtn{margin-left:10px;padding:12px 20px;background:#4CAF50;border:none;border-radius:20px;color:#fff;font-weight:600;cursor:pointer;}
+#sendBtn:hover{background:#43a047;}
 </style>
 </head>
 <body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Chats</h2>
+    <div id="chatList"></div>
+  </div>
 
-<div class="sidebar">
-  <div class="sidebar-header">Chats</div>
-  <div class="search-box">
-    <input type="text" id="searchId" placeholder="Search ID…">
+  <!-- Main chat area -->
+  <div class="main">
+    <div class="topbar">
+      <div id="chatWith">Loading...</div>
+      <button class="logout" id="logoutBtn">Logout</button>
+    </div>
+    <div class="messages" id="messages">
+      <p style="color:#777;text-align:center;">Select a user to start chatting</p>
+    </div>
+    <div class="input-area">
+      <input type="text" id="msgInput" placeholder="Type a message...">
+      <button id="sendBtn">Send</button>
+    </div>
   </div>
-  <div class="chat-list" id="chatList">
-    <!-- JS will populate recent chats -->
-  </div>
-</div>
-
-<div class="main">
-  <div class="chat-header">
-    <div id="chatWith">Select a user</div>
-    <button class="logout" id="logoutBtn">Logout</button>
-  </div>
-  <div class="chat-messages" id="messages">
-    <!-- Messages will appear here -->
-  </div>
-  <div class="chat-input">
-    <input type="text" id="msgInput" placeholder="Type a message">
-    <button id="sendBtn">Send</button>
-  </div>
-</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-import { getDatabase, ref, get, child, push, set, onChildAdded, query, orderByChild } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+import { getDatabase, ref, get, child, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
@@ -173,7 +72,88 @@ const firebaseConfig = {
   appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
   measurementId: "G-YEJ32DTM64"
 };
-</script>
 
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getDatabase(app);
+
+const chatList   = document.getElementById("chatList");
+const messagesEl = document.getElementById("messages");
+const chatWithEl = document.getElementById("chatWith");
+const msgInput   = document.getElementById("msgInput");
+const sendBtn    = document.getElementById("sendBtn");
+const logoutBtn  = document.getElementById("logoutBtn");
+
+let currentUser = null;
+let activeChatId = null;
+let activePartner = null;
+
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){ window.location.href="index.html"; return; }
+  currentUser = user;
+
+  // show my name + custom ID
+  const mySnap = await get(child(ref(db),"users/"+user.uid));
+  if(mySnap.exists()){
+    const u = mySnap.val();
+    chatWithEl.textContent = `${u.name} (${u.idNumber})`;
+  } else {
+    chatWithEl.textContent = user.email;
+  }
+
+  loadUserList();
+});
+
+logoutBtn.onclick = async ()=>{
+  await signOut(auth);
+  window.location.href="index.html";
+};
+
+// Load list of all other users
+async function loadUserList(){
+  const snap = await get(ref(db,"users"));
+  chatList.innerHTML="";
+  snap.forEach(child=>{
+    const uid = child.key;
+    if(uid===currentUser.uid) return;
+    const u = child.val();
+    const item = document.createElement("div");
+    item.className = "chat-item";
+    item.innerHTML = `<div class="chat-info"><strong>${u.name}</strong><small>${u.idNumber}</small></div>`;
+    item.onclick = ()=>openConversation(uid,u);
+    chatList.appendChild(item);
+  });
+}
+
+// Open a chat and listen for messages
+function openConversation(partnerUid, partnerData){
+  messagesEl.innerHTML="";
+  activePartner = {uid:partnerUid, ...partnerData};
+  const convoId = [currentUser.uid, partnerUid].sort().join("_");
+  activeChatId = convoId;
+  document.getElementById("chatWith").textContent =
+    `${partnerData.name} (${partnerData.idNumber})`;
+
+  onChildAdded(ref(db,`chats/${convoId}/messages`), snap=>{
+    const m = snap.val();
+    const div = document.createElement("div");
+    div.className = "message " + (m.sender===currentUser.uid ? "me":"them");
+    div.textContent = m.text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  });
+}
+
+// Send a message
+sendBtn.onclick = async ()=>{
+  if(!activeChatId || !msgInput.value.trim()) return;
+  await push(ref(db,`chats/${activeChatId}/messages`),{
+    sender: currentUser.uid,
+    text: msgInput.value,
+    ts: Date.now()
+  });
+  msgInput.value="";
+};
+</script>
 </body>
 </html>
