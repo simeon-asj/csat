@@ -259,13 +259,7 @@ onAuthStateChanged(auth,user=>{
 logoutBtn.onclick=async()=>{ await signOut(auth); location.href="index.html"; };
 
 function loadChats(){
-  div.innerHTML = `
-  <img src="https://via.placeholder.com/36" />
-  <div class="info">
-    <b>${u.name}</b>
-    <small>${u.idNumber}</small>
-  </div>
-`;
+  chatList.innerHTML="";
   const chatsRef=ref(db,"chats");
   onChildAdded(chatsRef,async snap=>{
     const chatId=snap.key;
