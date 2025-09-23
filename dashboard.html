@@ -219,6 +219,9 @@ button, input {
   </div>
 </div>
 
+<!-- 🔊 Notification Sound -->
+<audio id="notifSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1152-pristine.mp3" preload="auto"></audio>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
@@ -247,83 +250,103 @@ const chatHeader  = document.getElementById("chatHeader");
 const messagesDiv = document.getElementById("messages");
 const searchBtn   = document.getElementById("searchBtn");
 const searchInput = document.getElementById("searchUser");
+const notifSound  = document.getElementById("notifSound");
 
-let currentUser, activeChatId=null;
+let currentUser, activeChatId = null;
 
-onAuthStateChanged(auth,user=>{
-  if(!user) return location.href="index.html";
-  currentUser=user;
+onAuthStateChanged(auth, user => {
+  if (!user) return location.href = "index.html";
+  currentUser = user;
   loadChats();
 });
 
-logoutBtn.onclick=async()=>{ await signOut(auth); location.href="index.html"; };
+logoutBtn.onclick = async () => {
+  await signOut(auth);
+  location.href = "index.html";
+};
 
-function loadChats(){
-  chatList.innerHTML="";
-  const chatsRef=ref(db,"chats");
-  onChildAdded(chatsRef,async snap=>{
-    const chatId=snap.key;
-    const data=snap.val();
-    if(!data.messages) return;
-    const ids=chatId.split("_");
-    if(!ids.includes(currentUser.uid)) return;
-    const otherUid=ids[0]===currentUser.uid?ids[1]:ids[0];
-    const uSnap=await get(child(ref(db),"users/"+otherUid));
-    if(!uSnap.exists()) return;
-    const u=uSnap.val();
-    const div=document.createElement("div");
-    div.className="chat-item";
-    div.innerHTML=`<b>${u.name}</b><br>${u.idNumber}`;
-    div.onclick=()=>openChat(chatId,u);
+function loadChats() {
+  chatList.innerHTML = "";
+  const chatsRef = ref(db, "chats");
+  onChildAdded(chatsRef, async snap => {
+    const chatId = snap.key;
+    const data = snap.val();
+    if (!data.messages) return;
+    const ids = chatId.split("_");
+    if (!ids.includes(currentUser.uid)) return;
+    const otherUid = ids[0] === currentUser.uid ? ids[1] : ids[0];
+    const uSnap = await get(child(ref(db), "users/" + otherUid));
+    if (!uSnap.exists()) return;
+    const u = uSnap.val();
+    const div = document.createElement("div");
+    div.className = "chat-item";
+    div.innerHTML = `<b>${u.name}</b><br>${u.idNumber}`;
+    div.onclick = () => openChat(chatId, u);
     chatList.appendChild(div);
   });
 }
 
-function openChat(chatId,u){
-  activeChatId=chatId;
-  chatHeader.childNodes[0].nodeValue=`${u.name} (${u.idNumber})`;
-  messagesDiv.innerHTML="";
-  const msgsRef=ref(db,`chats/${chatId}/messages`);
-  onChildAdded(msgsRef,snap=>{
-    const m=snap.val();
-    const div=document.createElement("div");
-    div.className=m.sender===currentUser.uid?"msg me":"msg other";
-    div.textContent=m.text;
+function openChat(chatId, u) {
+  activeChatId = chatId;
+  chatHeader.childNodes[0].nodeValue = `${u.name} (${u.idNumber})`;
+  messagesDiv.innerHTML = "";
+
+  const msgsRef = ref(db, `chats/${chatId}/messages`);
+  onChildAdded(msgsRef, snap => {
+    const m = snap.val();
+    const isMine = m.sender === currentUser.uid;
+    const div = document.createElement("div");
+    div.className = isMine ? "msg me" : "msg other";
+    div.textContent = m.text;
     messagesDiv.appendChild(div);
-    messagesDiv.scrollTop=messagesDiv.scrollHeight;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    // 🔊 Play sound if message is from someone else
+    if (!isMine) {
+      if (notifSound) {
+        notifSound.play().catch(e => {
+          console.warn("Sound not played:", e);
+        });
+      }
+    }
   });
 }
 
-function sendMessage(){
-  if(!activeChatId || !msgInput.value.trim()) return;
-  push(ref(db,`chats/${activeChatId}/messages`),{
-    sender:currentUser.uid,
-    text:msgInput.value,
-    ts:Date.now()
+function sendMessage() {
+  if (!activeChatId || !msgInput.value.trim()) return;
+  push(ref(db, `chats/${activeChatId}/messages`), {
+    sender: currentUser.uid,
+    text: msgInput.value,
+    ts: Date.now()
   });
-  msgInput.value="";
+  msgInput.value = "";
 }
-sendBtn.onclick=sendMessage;
-msgInput.addEventListener("keydown",e=>{
-  if(e.key==="Enter"){e.preventDefault();sendMessage();}
+sendBtn.onclick = sendMessage;
+msgInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    sendMessage();
+  }
 });
 
-searchBtn.onclick=async()=>{
-  const id=searchInput.value.trim();
-  if(!id) return;
-  const usersSnap=await get(ref(db,"users"));
-  let found=null;
-  usersSnap.forEach(s=>{
-    const d=s.val();
-    if(d.idNumber===id) found={uid:s.key,...d};
+searchBtn.onclick = async () => {
+  const id = searchInput.value.trim();
+  if (!id) return;
+  const usersSnap = await get(ref(db, "users"));
+  let found = null;
+  usersSnap.forEach(s => {
+    const d = s.val();
+    if (d.idNumber === id) found = { uid: s.key, ...d };
   });
-  if(found){
-    const chatId=currentUser.uid<found.uid
+  if (found) {
+    const chatId = currentUser.uid < found.uid
       ? `${currentUser.uid}_${found.uid}`
       : `${found.uid}_${currentUser.uid}`;
-    await set(ref(db,"chats/"+chatId),{});
-    openChat(chatId,found);
-  }else alert("User ID not found");
+    await set(ref(db, "chats/" + chatId), {});
+    openChat(chatId, found);
+  } else {
+    alert("User ID not found");
+  }
 };
 </script>
 
