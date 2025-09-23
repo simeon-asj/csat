@@ -1,203 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>User Dashboard</title>
-<style>
-/* ===== Base ===== */
-body {
-  margin: 0;
-  font-family: "Segoe UI", Roboto, sans-serif;
-  background: #0e0e0e;
-  color: #fff;
-  height: 100vh;
-  display: flex;
-}
-button, input {
-  outline: none;
-  border: none;
-  font-family: inherit;
-}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Dashboard</title>
+  <style>
+    /* ===== Base ===== */
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: #0e0e0e;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+    }
+    button, input {
+      outline: none;
+      border: none;
+      font-family: inherit;
+    }
 
-/* ===== Sidebar ===== */
-.sidebar {
-  width: 260px;
-  background: #1a1a1a;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid #262626;
-}
-.sidebar h2 {
-  padding: 12px;
-  margin: 0;
-  background: #111;
-  font-size: 16px;
-  font-weight: 600;
-}
-.searchBox {
-  display: flex;
-  gap: 4px;
-  padding: 8px;
-  border-bottom: 1px solid #262626;
-}
-.searchBox input {
-  flex: 1;
-  padding: 6px 8px;
-  border-radius: 5px;
-  background: #242424;
-  color: #fff;
-  font-size: 13px;
-}
-.searchBox button {
-  padding: 6px 8px;
-  border-radius: 5px;
-  background: #e91e63;
-  color: #fff;
-  cursor: pointer;
-  font-size: 13px;
-}
-#chatList {
-  flex: 1;
-  overflow-y: auto;
-  font-size: 13px;
-}
-.chat-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border-bottom: 1px solid #262626;
-  cursor: pointer;
-}
-.chat-item:hover {
-  background: #2a2a2a;
-}
-.chat-item img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #555;
-}
-.chat-item .info {
-  flex: 1;
-}
-.chat-item .info b {
-  font-size: 14px;
-}
-.chat-item .info small {
-  color: #aaa;
-  display: block;
-  font-size: 12px;
-}
+    /* ===== Sidebar ===== */
+    .sidebar {
+      width: 260px;
+      background: #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #262626;
+    }
+    .sidebar h2 {
+      padding: 12px;
+      margin: 0;
+      background: #111;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .searchBox {
+      display: flex;
+      gap: 4px;
+      padding: 8px;
+      border-bottom: 1px solid #262626;
+    }
+    .searchBox input {
+      flex: 1;
+      padding: 6px 8px;
+      border-radius: 5px;
+      background: #242424;
+      color: #fff;
+      font-size: 13px;
+    }
+    .searchBox button {
+      padding: 6px 8px;
+      border-radius: 5px;
+      background: #e91e63;
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    #chatList {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+    .chat-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid #262626;
+      cursor: pointer;
+    }
+    .chat-item:hover {
+      background: #2a2a2a;
+    }
 
-/* ===== Main ===== */
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.header {
-  padding: 12px 16px;
-  background: #111;
-  font-weight: 600;
-  font-size: 14px;
-  border-bottom: 1px solid #262626;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.logout {
-  padding: 4px 10px;
-  border-radius: 5px;
-  background: #e53935;
-  color: #fff;
-  cursor: pointer;
-  font-size: 13px;
-}
-.logout:hover {
-  background: #d32f2f;
-}
+    /* ===== Main ===== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      padding: 12px 16px;
+      background: #111;
+      font-weight: 600;
+      font-size: 14px;
+      border-bottom: 1px solid #262626;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logout {
+      padding: 4px 10px;
+      border-radius: 5px;
+      background: #e53935;
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .logout:hover {
+      background: #d32f2f;
+    }
 
-/* ===== Messages ===== */
-.messages {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: #121212;
-}
-.msg {
-  max-width: 70%;
-  padding: 8px 12px;
-  border-radius: 18px;
-  font-size: 14px;
-  line-height: 1.4em;
-  position: relative;
-  word-wrap: break-word;
-}
-.msg.me {
-  align-self: flex-end;
-  background: #ff0073;
-  color: #fff;
-  border-bottom-right-radius: 4px;
-}
-.msg.other {
-  align-self: flex-start;
-  background: #2a2a2a;
-  color: #fff;
-  border-bottom-left-radius: 4px;
-}
-.msg img {
-  max-width: 100%;
-  border-radius: 10px;
-}
+    /* ===== Messages ===== */
+    .messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #121212;
+    }
+    .msg {
+      max-width: 70%;
+      padding: 8px 12px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.4em;
+      position: relative;
+      word-wrap: break-word;
+    }
+    .msg.me {
+      align-self: flex-end;
+      background: #ff0073;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.other {
+      align-self: flex-start;
+      background: #2a2a2a;
+      color: #fff;
+      border-bottom-left-radius: 4px;
+    }
 
-/* Timestamp (optional styling) */
-.timestamp {
-  font-size: 11px;
-  color: #888;
-  text-align: center;
-  margin: 6px 0;
-}
+    /* ===== Input Row ===== */
+    .inputRow {
+      display: flex;
+      padding: 12px 16px;
+      gap: 8px;
+      border-top: 1px solid #262626;
+      background: #111;
+    }
+    .inputRow input {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 20px;
+      background: #242424;
+      color: #fff;
+      font-size: 14px;
+    }
+    .inputRow button {
+      padding: 10px 16px;
+      border-radius: 20px;
+      background: #e91e63;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .inputRow button:hover {
+      background: #d81b60;
+    }
 
-/* ===== Input Row ===== */
-.inputRow {
-  display: flex;
-  padding: 12px 16px;
-  gap: 8px;
-  border-top: 1px solid #262626;
-  background: #111;
-}
-.inputRow input {
-  flex: 1;
-  padding: 10px 16px;
-  border-radius: 20px;
-  background: #242424;
-  color: #fff;
-  font-size: 14px;
-}
-.inputRow button {
-  padding: 10px 16px;
-  border-radius: 20px;
-  background: #e91e63;
-  color: #fff;
-  cursor: pointer;
-  font-size: 14px;
-}
-.inputRow button:hover {
-  background: #d81b60;
-}
-</style>
-
+    /* ===== User Info ===== */
+    #userInfo {
+      padding: 12px;
+      background: #111;
+      border-bottom: 1px solid #262626;
+      font-size: 13px;
+    }
+    #userInfo b {
+      font-weight: 600;
+    }
+    #userId {
+      cursor: pointer;
+      color: #03a9f4;
+      text-decoration: underline;
+    }
+    #userId:hover {
+      color: #29b6f6;
+    }
+  </style>
 </head>
 <body>
 
 <!-- Sidebar -->
 <div class="sidebar">
+  <!-- 👤 User Info Bar -->
+  <div id="userInfo">
+    Logged in as: <b id="userName">Loading...</b><br>
+    ID: <small id="userId" title="Click to copy">Loading...</small>
+  </div>
   <h2>Chats</h2>
   <div class="searchBox">
     <input id="searchUser" placeholder="Search ID…">
@@ -251,13 +245,31 @@ const messagesDiv = document.getElementById("messages");
 const searchBtn   = document.getElementById("searchBtn");
 const searchInput = document.getElementById("searchUser");
 const notifSound  = document.getElementById("notifSound");
+const userNameEl  = document.getElementById("userName");
+const userIdEl    = document.getElementById("userId");
 
 let currentUser, activeChatId = null;
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) return location.href = "index.html";
   currentUser = user;
+
+  // 🧠 Get user's name and ID from DB
+  const uSnap = await get(ref(db, "users/" + currentUser.uid));
+  if (uSnap.exists()) {
+    const u = uSnap.val();
+    userNameEl.textContent = u.name || "N/A";
+    userIdEl.textContent = u.idNumber || "N/A";
+  }
+
   loadChats();
+});
+
+// 🖱️ Click-to-copy ID
+userIdEl.addEventListener("click", () => {
+  navigator.clipboard.writeText(userIdEl.textContent)
+    .then(() => alert("User ID copied to clipboard!"))
+    .catch(() => alert("Failed to copy ID."));
 });
 
 logoutBtn.onclick = async () => {
@@ -301,13 +313,10 @@ function openChat(chatId, u) {
     messagesDiv.appendChild(div);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-    // 🔊 Play sound if message is from someone else
     if (!isMine) {
-      if (notifSound) {
-        notifSound.play().catch(e => {
-          console.warn("Sound not played:", e);
-        });
-      }
+      notifSound.play().catch(e => {
+        console.warn("Notification sound error:", e);
+      });
     }
   });
 }
@@ -321,6 +330,7 @@ function sendMessage() {
   });
   msgInput.value = "";
 }
+
 sendBtn.onclick = sendMessage;
 msgInput.addEventListener("keydown", e => {
   if (e.key === "Enter") {
@@ -349,6 +359,5 @@ searchBtn.onclick = async () => {
   }
 };
 </script>
-
 </body>
 </html>
