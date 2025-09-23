@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Firebase Login & Register</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins, sans-serif;}
+body{background:#121212;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;}
+.container{background:#1e1e1e;padding:40px;border-radius:16px;width:350px;box-shadow:0 0 30px rgba(0,0,0,0.5);}
+h2{text-align:center;margin-bottom:20px;font-weight:600;}
+.form-group{margin-bottom:20px;}
+.form-group input{width:100%;padding:14px 18px;background:#262626;border:none;border-radius:8px;color:#fff;font-size:15px;}
+.form-group input:focus{background:#333;outline:none;}
+button{width:100%;padding:14px;background:#4CAF50;border:none;border-radius:8px;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+button:hover{background:#43a047;}
+.toggle-link{text-align:center;margin-top:15px;font-size:14px;}
+.toggle-link a{color:#4CAF50;cursor:pointer;text-decoration:none;font-weight:600;}
+.toggle-link a:hover{text-decoration:underline;}
+.message{margin-top:15px;text-align:center;font-size:14px;color:#ff5252;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2 id="form-title">Login</h2>
+
+  <form id="login-form">
+    <div class="form-group">
+      <input type="email" id="login-email" placeholder="Email" required>
+    </div>
+    <div class="form-group">
+      <input type="password" id="login-password" placeholder="Password" required>
+    </div>
+    <button type="submit">Login</button>
+  </form>
+
+  <form id="register-form" style="display:none;">
+    <div class="form-group">
+      <input type="text" id="reg-name" placeholder="Full Name" required>
+    </div>
+    <div class="form-group">
+      <input type="email" id="reg-email" placeholder="Email" required>
+    </div>
+    <div class="form-group">
+      <input type="password" id="reg-password" placeholder="Password" required>
+    </div>
+    <button type="submit">Register</button>
+  </form>
+
+  <div class="toggle-link">
+    <span id="toggle-text">Don't have an account? <a id="toggle-btn">Register</a></span>
+  </div>
+  <div class="message" id="message"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile }
+  from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { getDatabase, ref, set }
+  from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
+  authDomain: "csat-2d59c.firebaseapp.com",
+  databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "csat-2d59c",
+  storageBucket: "csat-2d59c.firebasestorage.app",
+  messagingSenderId: "250094013303",
+  appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
+  measurementId: "G-YEJ32DTM64"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getDatabase(app);
+
+const loginForm = document.getElementById("login-form");
+const registerForm = document.getElementById("register-form");
+const toggleBtn = document.getElementById("toggle-btn");
+const toggleText = document.getElementById("toggle-text");
+const formTitle = document.getElementById("form-title");
+const msg = document.getElementById("message");
+
+// Toggle forms
+function toggleForms(){
+  if (loginForm.style.display === "none") {
+    registerForm.style.display = "none";
+    loginForm.style.display = "block";
+    formTitle.textContent = "Login";
+    toggleText.innerHTML = "Don't have an account? <a id='toggle-btn'>Register</a>";
+  } else {
+    loginForm.style.display = "none";
+    registerForm.style.display = "block";
+    formTitle.textContent = "Register";
+    toggleText.innerHTML = "Already have an account? <a id='toggle-btn'>Login</a>";
+  }
+  document.getElementById("toggle-btn").addEventListener("click",(e)=>{e.preventDefault();toggleForms();});
+}
+document.getElementById("toggle-btn").addEventListener("click",(e)=>{e.preventDefault();toggleForms();});
+
+// Helper to create unique ID (e.g. USR-XXXXXX)
+function generateId(){
+  return "USR-" + Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+// Register
+registerForm.addEventListener("submit", async (e)=>{
+  e.preventDefault(); msg.textContent="";
+  const name = document.getElementById("reg-name").value.trim();
+  const email = document.getElementById("reg-email").value.trim();
+  const password = document.getElementById("reg-password").value;
+  const idNumber = generateId();
+  try{
+    const userCred = await createUserWithEmailAndPassword(auth,email,password);
+    await updateProfile(userCred.user,{ displayName:name });
+    await set(ref(db,"users/"+userCred.user.uid),{
+      name, email, idNumber
+    });
+    msg.style.color="#4CAF50";
+    msg.textContent="✅ Registered! Your ID: "+idNumber;
+    registerForm.reset();
+    // after short delay, go to dashboard
+    setTimeout(()=>window.location.href="dashboard.html",1500);
+  }catch(err){
+    msg.style.color="#ff5252";
+    msg.textContent="⚠️ "+err.message;
+  }
+});
+
+// Login
+loginForm.addEventListener("submit", async (e)=>{
+  e.preventDefault(); msg.textContent="";
+  const email=document.getElementById("login-email").value.trim();
+  const password=document.getElementById("login-password").value;
+  try{
+    await signInWithEmailAndPassword(auth,email,password);
+    msg.style.color="#4CAF50";
+    msg.textContent="✅ Login successful!";
+    setTimeout(()=>window.location.href="dashboard.html",800);
+  }catch(err){
+    msg.style.color="#ff5252";
+    msg.textContent="⚠️ "+err.message;
+  }
+});
+</script>
+</body>
+</html>
