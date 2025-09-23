@@ -89,8 +89,18 @@
     import { getDatabase, ref, onValue, push, update, remove, child, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    // === CONFIG (replace with your Firebase config) ===
-    const firebaseConfig = { /* your firebase config */ };
+    // === Your Firebase Config ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
+      authDomain: "csat-2d59c.firebaseapp.com",
+      databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "csat-2d59c",
+      storageBucket: "csat-2d59c.firebasedestorage.app",
+      messagingSenderId: "250094013303",
+      appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
+      measurementId: "G-YEJ32DTM64"
+    };
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
