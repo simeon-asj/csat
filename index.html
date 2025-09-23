@@ -1,160 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Dark Chat – Register / Login</title>
-
-<!-- Firebase COMPAT SDKs -->
-<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Firebase Login & Register</title>
 <style>
-body{background:#0f172a;color:#e2e8f0;font-family:Segoe UI,Arial,sans-serif;
-     display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-.container{background:#1e293b;padding:25px;border-radius:16px;width:90%;max-width:420px;
-           box-shadow:0 8px 20px rgba(0,0,0,.6);}
-h2{text-align:center;margin-top:0}
-input,button{width:100%;padding:12px;margin:8px 0;border:none;border-radius:8px;font-size:16px;}
-input{background:#334155;color:#fff;}
-button{background:#3b82f6;color:#fff;cursor:pointer;}
-button:hover{background:#2563eb;}
-.chatbox{background:#0f172a;border-radius:10px;padding:10px;height:300px;overflow-y:auto;margin-bottom:10px;}
-.message{margin:6px 0;padding:8px 12px;background:#334155;border-radius:8px;}
-.self{background:#3b82f6;}
-.link{color:#3b82f6;cursor:pointer;text-align:center;display:block;margin-top:10px;}
+/* ==== Dark Modern Design ==== */
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins, sans-serif;}
+body{background:#121212;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;}
+.container{background:#1e1e1e;padding:40px;border-radius:16px;width:350px;box-shadow:0 0 30px rgba(0,0,0,0.5);}
+h2{text-align:center;margin-bottom:20px;font-weight:600;}
+.form-group{margin-bottom:20px;}
+.form-group input{width:100%;padding:14px 18px;background:#262626;border:none;border-radius:8px;color:#fff;font-size:15px;}
+.form-group input:focus{background:#333;outline:none;}
+button{width:100%;padding:14px;background:#4CAF50;border:none;border-radius:8px;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;}
+button:hover{background:#43a047;}
+.toggle-link{text-align:center;margin-top:15px;font-size:14px;}
+.toggle-link a{color:#4CAF50;cursor:pointer;text-decoration:none;font-weight:600;}
+.toggle-link a:hover{text-decoration:underline;}
+.message{margin-top:15px;text-align:center;font-size:14px;color:#ff5252;}
 </style>
 </head>
 <body>
+<div class="container">
+  <h2 id="form-title">Login</h2>
 
-<!-- Register -->
-<div class="container" id="registerDiv">
-  <h2>Register</h2>
-  <input id="regEmail" type="email" placeholder="Email">
-  <input id="regPass" type="password" placeholder="Password">
-  <input id="regName" placeholder="Display Name">
-  <button id="registerBtn">Register</button>
-  <span class="link" onclick="showLogin()">Already have an account? Login</span>
+  <!-- Login Form -->
+  <form id="login-form">
+    <div class="form-group">
+      <input type="email" id="login-email" placeholder="Email" required>
+    </div>
+    <div class="form-group">
+      <input type="password" id="login-password" placeholder="Password" required>
+    </div>
+    <button type="submit">Login</button>
+  </form>
+
+  <!-- Register Form -->
+  <form id="register-form" style="display:none;">
+    <div class="form-group">
+      <input type="text" id="reg-name" placeholder="Full Name" required>
+    </div>
+    <div class="form-group">
+      <input type="email" id="reg-email" placeholder="Email" required>
+    </div>
+    <div class="form-group">
+      <input type="password" id="reg-password" placeholder="Password" required>
+    </div>
+    <button type="submit">Register</button>
+  </form>
+
+  <div class="toggle-link">
+    <span id="toggle-text">Don't have an account? <a id="toggle-btn">Register</a></span>
+  </div>
+  <div class="message" id="message"></div>
 </div>
 
-<!-- Login -->
-<div class="container" id="loginDiv" style="display:none;">
-  <h2>Login</h2>
-  <input id="logEmail" type="email" placeholder="Email">
-  <input id="logPass" type="password" placeholder="Password">
-  <button id="loginBtn">Login</button>
-  <span class="link" onclick="showRegister()">Need an account? Register</span>
-</div>
+<!-- Firebase (Modular v9) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } 
+    from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+  import { getDatabase, ref, set } 
+    from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-<!-- Chat -->
-<div class="container" id="chatDiv" style="display:none;">
-  <h2 id="welcome"></h2>
-  <input id="searchEmail" type="email" placeholder="Friend's Email">
-  <div class="chatbox" id="chatBox"></div>
-  <input id="msgInput" placeholder="Type a message">
-  <button id="sendBtn">Send</button>
-  <span class="link" onclick="logout()">Logout</span>
-</div>
+  // 🔑 Your Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
+    authDomain: "csat-2d59c.firebaseapp.com",
+    databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "csat-2d59c",
+    storageBucket: "csat-2d59c.firebasestorage.app",
+    messagingSenderId: "250094013303",
+    appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
+    measurementId: "G-YEJ32DTM64"
+  };
 
-<script>
-// ✅ Firebase Config (replace with yours)
-const firebaseConfig = {
-  apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
-  authDomain: "csat-2d59c.firebaseapp.com",
-  databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "csat-2d59c",
-  storageBucket: "csat-2d59c.firebasestorage.app",
-  messagingSenderId: "250094013303",
-  appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
-  measurementId: "G-YEJ32DTM64"
-};
+  // 🔥 Initialize
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getDatabase(app);
 
-// ✅ Initialize
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.database();
+  // Elements
+  const loginForm = document.getElementById("login-form");
+  const registerForm = document.getElementById("register-form");
+  const toggleBtn = document.getElementById("toggle-btn");
+  const toggleText = document.getElementById("toggle-text");
+  const formTitle = document.getElementById("form-title");
+  const msg = document.getElementById("message");
 
-// Elements
-const regDiv = document.getElementById("registerDiv");
-const logDiv = document.getElementById("loginDiv");
-const chatDiv= document.getElementById("chatDiv");
-const welcome= document.getElementById("welcome");
-const chatBox= document.getElementById("chatBox");
-let currentUser=null, chatRef=null;
-
-// UI Switchers
-function showLogin(){ regDiv.style.display="none"; logDiv.style.display="block"; }
-function showRegister(){ logDiv.style.display="none"; regDiv.style.display="block"; }
-
-// Register
-document.getElementById("registerBtn").onclick=()=>{
-  const email=document.getElementById("regEmail").value.trim();
-  const pass=document.getElementById("regPass").value.trim();
-  const name=document.getElementById("regName").value.trim();
-  if(!email||!pass||!name){alert("Complete all fields");return;}
-  auth.createUserWithEmailAndPassword(email,pass)
-      .then(cred=>{
-         return db.ref("users/"+cred.user.uid).set({name,email});
-      })
-      .then(()=>alert("Registered! Please login."))
-      .catch(err=>alert(err.message));
-};
-
-// Login
-document.getElementById("loginBtn").onclick=()=>{
-  const email=document.getElementById("logEmail").value.trim();
-  const pass=document.getElementById("logPass").value.trim();
-  auth.signInWithEmailAndPassword(email,pass)
-      .catch(err=>alert(err.message));
-};
-
-// Auth state
-auth.onAuthStateChanged(user=>{
-  if(user){
-    currentUser=user;
-    welcome.textContent="Welcome "+(user.email);
-    regDiv.style.display=logDiv.style.display="none";
-    chatDiv.style.display="block";
-  }else{
-    chatDiv.style.display="none";
-    logDiv.style.display="block";
-  }
-});
-
-// Logout
-function logout(){ auth.signOut(); }
-
-// Messaging
-document.getElementById("searchEmail").addEventListener("change",()=>{
-  const partner=document.getElementById("searchEmail").value.trim().replace(/\./g,'_');
-  if(!partner) return;
-  if(chatRef) chatRef.off();
-  const roomId = currentUser.uid < partner ? currentUser.uid+"_"+partner : partner+"_"+currentUser.uid;
-  chatRef=db.ref("chats/"+roomId);
-  chatBox.innerHTML="";
-  chatRef.on("child_added",snap=>{
-    const m=snap.val();
-    const div=document.createElement("div");
-    div.className="message"+(m.sender===currentUser.uid?" self":"");
-    div.textContent=m.text;
-    chatBox.appendChild(div);
-    chatBox.scrollTop=chatBox.scrollHeight;
+  // Toggle login/register
+  toggleBtn.addEventListener("click", () => {
+    if (loginForm.style.display === "none") {
+      registerForm.style.display = "none";
+      loginForm.style.display = "block";
+      formTitle.textContent = "Login";
+      toggleText.innerHTML = "Don't have an account? <a id='toggle-btn'>Register</a>";
+    } else {
+      loginForm.style.display = "none";
+      registerForm.style.display = "block";
+      formTitle.textContent = "Register";
+      toggleText.innerHTML = "Already have an account? <a id='toggle-btn'>Login</a>";
+    }
+    // reattach listener to new link
+    document.getElementById("toggle-btn").addEventListener("click", (e)=>{e.preventDefault();toggleBtn.click();});
   });
-});
 
-document.getElementById("sendBtn").onclick=()=>{
-  const text=document.getElementById("msgInput").value.trim();
-  const partner=document.getElementById("searchEmail").value.trim().replace(/\./g,'_');
-  if(!text||!partner)return;
-  const roomId = currentUser.uid < partner ? currentUser.uid+"_"+partner : partner+"_"+currentUser.uid;
-  db.ref("chats/"+roomId).push({
-    sender: currentUser.uid,
-    text,
-    time: Date.now()
+  // Register
+  registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.textContent = "";
+    const name = document.getElementById("reg-name").value.trim();
+    const email = document.getElementById("reg-email").value.trim();
+    const password = document.getElementById("reg-password").value;
+    try {
+      const userCred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCred.user, { displayName: name });
+      // Save user info in Realtime DB
+      await set(ref(db, "users/" + userCred.user.uid), {
+        name: name,
+        email: email
+      });
+      msg.style.color = "#4CAF50";
+      msg.textContent = "✅ Registered successfully. You can now login.";
+      registerForm.reset();
+    } catch (error) {
+      msg.style.color = "#ff5252";
+      msg.textContent = "⚠️ " + error.message;
+    }
   });
-  document.getElementById("msgInput").value="";
-};
+
+  // Login
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.textContent = "";
+    const email = document.getElementById("login-email").value.trim();
+    const password = document.getElementById("login-password").value;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      msg.style.color = "#4CAF50";
+      msg.textContent = "✅ Login successful!";
+      loginForm.reset();
+      // Redirect to a protected page if you have one:
+      // window.location.href = "dashboard.html";
+    } catch (error) {
+      msg.style.color = "#ff5252";
+      msg.textContent = "⚠️ " + error.message;
+    }
+  });
 </script>
 </body>
 </html>
