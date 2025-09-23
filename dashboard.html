@@ -87,9 +87,6 @@
       justify-content: space-between;
       align-items: center;
     }
-    .chat-item .name-id {
-      /* Bold when unread */
-    }
     .chat-item.unread .name-id {
       font-weight: bold;
     }
@@ -119,7 +116,6 @@
       font-weight: 600;
       font-size: 14px;
       border-bottom: 1px solid #262626;
-      position: relative;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -201,7 +197,6 @@
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <!-- User Info Bar -->
     <div id="userInfo">
       Logged in as: <b id="userName">Loading...</b><br>
       ID: <small id="userId" title="Click to copy">Loading...</small>
@@ -226,7 +221,6 @@
     </div>
   </div>
 
-  <!-- Notification Sound -->
   <audio id="notifSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1152-pristine.mp3" preload="auto"></audio>
 
   <script type="module">
@@ -263,9 +257,7 @@
 
     let currentUser = null;
     let activeChatId = null;
-    let activeMessagesRef = null; // to store the current messages ref for removing listeners
-
-    // stores metadata for each chat
+    let activeMessagesRef = null;
     let chatsMeta = {};
 
     function sortChatIdsByLatest(chatIds) {
@@ -283,7 +275,6 @@
       }
       currentUser = user;
 
-      // get user name & ID
       const usnap = await get(ref(db, "users/" + currentUser.uid));
       if (usnap.exists()) {
         const u = usnap.val();
@@ -291,15 +282,12 @@
         userIdEl.textContent = u.idNumber || "N/A";
       }
 
-      // Listen for new messages per chat to update metadata
       const chatsRef = ref(db, "chats");
       onChildAdded(chatsRef, snap => {
         const chatId = snap.key;
-        // only track chats involving this user
         const ids = chatId.split("_");
         if (!ids.includes(currentUser.uid)) return;
 
-        // Initialize meta if not yet
         if (!chatsMeta[chatId]) {
           chatsMeta[chatId] = {
             latestMsgTs: 0,
@@ -312,19 +300,15 @@
         onChildAdded(msgsRef, msgSnap => {
           const m = msgSnap.val();
           const ts = m.ts || 0;
-          // update if newer
           if (ts > (chatsMeta[chatId].latestMsgTs || 0)) {
             chatsMeta[chatId].latestMsgTs = ts;
             chatsMeta[chatId].latestMsgText = m.text || "";
           }
-          // If message is from someone else, and this chat is not open, mark unread + sound
           if (m.sender !== currentUser.uid && activeChatId !== chatId) {
             chatsMeta[chatId].unread = true;
-            // Play sound for new unread
-            notifSound.play().catch(e => console.warn("Notif sound error:", e));
+            notifSound.play().catch(() => {});
             renderChatList();
           }
-          // If this chat is active, then it's read
           if (activeChatId === chatId) {
             chatsMeta[chatId].unread = false;
             renderChatList();
@@ -332,7 +316,6 @@
         });
       });
 
-      // Initial render once metadata may start filling
       renderChatList();
     });
 
@@ -349,56 +332,44 @@
 
     function renderChatList() {
       chatList.innerHTML = "";
-      const chatsRef = ref(db, "chats");
-      get(chatsRef).then(chatsSnap => {
-        const chatIds = [];
-        chatsSnap.forEach(snap => {
-          const chatId = snap.key;
-          const data = snap.val();
-          if (!data.messages) return;
-          const ids = chatId.split("_");
-          if (!ids.includes(currentUser.uid)) return;
-          chatIds.push(chatId);
-        });
+      const chatIds = Object.keys(chatsMeta);
+      const sorted = sortChatIdsByLatest(chatIds);
 
-        const sorted = sortChatIdsByLatest(chatIds);
+      sorted.forEach(chatId => {
+        const meta = chatsMeta[chatId] || { latestMsgTs: 0, latestMsgText: "", unread: false };
+        const ids = chatId.split("_");
+        const otherUid = ids[0] === currentUser.uid ? ids[1] : ids[0];
 
-        sorted.forEach(chatId => {
-          const meta = chatsMeta[chatId] || { latestMsgTs: 0, latestMsgText: "", unread: false };
-          const ids = chatId.split("_");
-          const otherUid = ids[0] === currentUser.uid ? ids[1] : ids[0];
-          get(child(ref(db), "users/" + otherUid)).then(uSnap => {
-            if (!uSnap.exists()) return;
-            const u = uSnap.val();
-            const div = document.createElement("div");
-            div.className = "chat-item" + (meta.unread ? " unread" : "");
-            // Name & online label
-            const topLine = document.createElement("div");
-            topLine.className = "top-line";
+        get(child(ref(db), "users/" + otherUid)).then(uSnap => {
+          if (!uSnap.exists()) return;
+          const u = uSnap.val();
 
-            const nameId = document.createElement("div");
-            nameId.className = "name-id";
-            nameId.innerText = u.name || "N/A";
+          const div = document.createElement("div");
+          div.className = "chat-item" + (meta.unread ? " unread" : "");
 
-            const onlineLabel = document.createElement("div");
-            onlineLabel.className = "online-label";
-            onlineLabel.textContent = (u.online === true || u.online === "true") ? "online" : "";
+          const topLine = document.createElement("div");
+          topLine.className = "top-line";
 
-            topLine.appendChild(nameId);
-            topLine.appendChild(onlineLabel);
+          const nameId = document.createElement("div");
+          nameId.className = "name-id";
+          nameId.innerText = u.name || "N/A";
 
-            div.appendChild(topLine);
+          const onlineLabel = document.createElement("div");
+          onlineLabel.className = "online-label";
+          onlineLabel.textContent = (u.online === true || u.online === "true") ? "online" : "";
 
-            // latest message preview
-            const msgPreview = document.createElement("div");
-            msgPreview.className = "latest-msg";
-            msgPreview.innerText = meta.latestMsgText || "";
-            div.appendChild(msgPreview);
+          topLine.appendChild(nameId);
+          topLine.appendChild(onlineLabel);
+          div.appendChild(topLine);
 
-            div.onclick = () => openChat(otherUid, chatId, u.name);
+          const msgPreview = document.createElement("div");
+          msgPreview.className = "latest-msg";
+          msgPreview.innerText = meta.latestMsgText || "";
+          div.appendChild(msgPreview);
 
-            chatList.appendChild(div);
-          });
+          div.onclick = () => openChat(otherUid, chatId, u.name);
+
+          chatList.appendChild(div);
         });
       });
     }
@@ -408,34 +379,27 @@
       chatHeader.textContent = `Chat with ${otherName}`;
       messagesDiv.innerHTML = "";
 
-      // Remove previous listener if any
       if (activeMessagesRef) {
         off(activeMessagesRef, "child_added");
       }
 
       activeMessagesRef = ref(db, `chats/${chatId}/messages`);
 
-      // Load existing messages once and then listen for new ones
       get(activeMessagesRef).then(snap => {
-        messagesDiv.innerHTML = ""; // clear again just in case
+        messagesDiv.innerHTML = "";
         snap.forEach(childSnap => {
-          const m = childSnap.val();
-          appendMessage(m);
+          appendMessage(childSnap.val());
         });
-        // Scroll to bottom after loading
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
 
-      // Now listen for new messages to append live
       onChildAdded(activeMessagesRef, snap => {
         const m = snap.val();
-        // Prevent duplicate messages on initial load by checking timestamp
         if (messagesDiv.querySelector(`[data-ts="${m.ts}"]`)) return;
         appendMessage(m);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
 
-      // Mark unread false for this chat
       if (chatsMeta[chatId]) {
         chatsMeta[chatId].unread = false;
         renderChatList();
@@ -466,19 +430,14 @@
       msgInput.value = "";
     };
 
-    // Search user by ID and open chat with them (if exists)
     searchBtn.onclick = async () => {
       const searchId = searchInput.value.trim();
       if (!searchId) return;
-
-      // Check if user exists
       const userSnap = await get(ref(db, "users/" + searchId));
       if (!userSnap.exists()) {
         alert("User not found!");
         return;
       }
-
-      // Create chatId with sorted user IDs to avoid duplicates
       const ids = [currentUser.uid, searchId].sort();
       const chatId = ids.join("_");
       openChat(searchId, chatId, userSnap.val().name || "User");
