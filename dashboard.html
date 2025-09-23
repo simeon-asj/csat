@@ -179,6 +179,23 @@ imgFile.onchange=()=>{
       .update({lastAt:firebase.firestore.FieldValue.serverTimestamp()});
   });
 };
+
+
+  <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { getDatabase, ref, get, child, push, set, onChildAdded, query, orderByChild } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
+  authDomain: "csat-2d59c.firebaseapp.com",
+  databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "csat-2d59c",
+  storageBucket: "csat-2d59c.firebasestorage.app",
+  messagingSenderId: "250094013303",
+  appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
+  measurementId: "G-YEJ32DTM64"
+};
 </script>
 </body>
 </html>
