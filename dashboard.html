@@ -85,6 +85,7 @@
     .chat-item .top-line {
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
     .chat-item .name-id {
       /* Bold when unread */
@@ -99,6 +100,11 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .online-label {
+      color: #4caf50;
+      font-size: 12px;
+      align-self: center;
     }
 
     /* ===== Main ===== */
@@ -364,19 +370,31 @@
             const u = uSnap.val();
             const div = document.createElement("div");
             div.className = "chat-item" + (meta.unread ? " unread" : "");
-            // Name & ID
+
+            // Name + online label container
             const topLine = document.createElement("div");
             topLine.className = "top-line";
+
+            // Name & ID
             const nameId = document.createElement("div");
             nameId.className = "name-id";
-            nameId.innerText = `${u.name} ${u.idNumber ? "(" + u.idNumber + ")" : ""}`;
+            nameId.innerText = u.name;  // just name as in your example
             topLine.appendChild(nameId);
+
+            // Online label on the right
+            const onlineLabel = document.createElement("div");
+            onlineLabel.className = "online-label";
+            onlineLabel.innerText = "online";
+            topLine.appendChild(onlineLabel);
+
             div.appendChild(topLine);
+
             // Latest message preview
             const lm = document.createElement("div");
             lm.className = "latest-msg";
             lm.innerText = meta.latestMsgText;
             div.appendChild(lm);
+
             // click to open
             div.onclick = () => {
               openChat(chatId, u);
@@ -398,61 +416,72 @@
       messagesDiv.innerHTML = "";
 
       const msgsRef = ref(db, `chats/${chatId}/messages`);
-      onChildAdded(msgsRef, snap => {
-        const m = snap.val();
-        const isMine = (m.sender === currentUser.uid);
-        const msgDiv = document.createElement("div");
-        msgDiv.className = isMine ? "msg me" : "msg other";
-        msgDiv.textContent = m.text;
-        messagesDiv.appendChild(msgDiv);
+      get(msgsRef).then(snap => {
+        const msgs = [];
+        snap.forEach(mSnap => {
+          msgs.push(mSnap.val());
+        });
+        // Sort by timestamp ascending
+        msgs.sort((a,b) => (a.ts || 0) - (b.ts || 0));
+        msgs.forEach(m => {
+          addMessageToDiv(m);
+        });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        // If message is from someone else in active chat, mark read
-        if (!isMine) {
-          if (chatsMeta[chatId]) {
-            chatsMeta[chatId].unread = false;
-            renderChatList();
-          }
-        }
       });
-      // also render the list to update bold/unread removal
+
       renderChatList();
     }
 
-    function sendMessage() {
-      if (!activeChatId || !msgInput.value.trim()) return;
-      push(ref(db, `chats/${activeChatId}/messages`), {
-        sender: currentUser.uid,
-        text: msgInput.value,
-        ts: Date.now()
-      });
-      msgInput.value = "";
+    function addMessageToDiv(m) {
+      const div = document.createElement("div");
+      div.className = "msg " + (m.sender === currentUser.uid ? "me" : "other");
+      div.innerText = m.text;
+      messagesDiv.appendChild(div);
     }
-    sendBtn.onclick = sendMessage;
-    msgInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
 
-    searchBtn.onclick = async () => {
-      const id = searchInput.value.trim();
-      if (!id) return;
-      const usersSnap = await get(ref(db, "users"));
-      let found = null;
-      usersSnap.forEach(s => {
-        const d = s.val();
-        if (d.idNumber === id) found = { uid: s.key, ...d };
+    sendBtn.onclick = () => {
+      if (!activeChatId) return alert("Please select a user first");
+      const text = msgInput.value.trim();
+      if (!text) return;
+      const msgsRef = ref(db, `chats/${activeChatId}/messages`);
+      const newMsgRef = push(msgsRef);
+      set(newMsgRef, {
+        text,
+        sender: currentUser.uid,
+        ts: Date.now()
+      }).then(() => {
+        msgInput.value = "";
+        openChat(activeChatId); // refresh messages
       });
-      if (found) {
-        const chatId = currentUser.uid < found.uid
-          ? `${currentUser.uid}_${found.uid}`
-          : `${found.uid}_${currentUser.uid}`;
-        await set(ref(db, "chats/" + chatId), {});
-        openChat(chatId, found);
-      } else {
-        alert("User ID not found");
+    };
+
+    // Search by ID (basic)
+    searchBtn.onclick = () => {
+      const val = searchInput.value.trim();
+      if (!val) {
+        alert("Enter user ID to search");
+        return;
       }
+      // Lookup user by ID
+      get(ref(db, "users")).then(snap => {
+        let foundUser = null;
+        snap.forEach(s => {
+          if (s.val().idNumber === val) {
+            foundUser = s.val();
+            foundUser.uid = s.key;
+          }
+        });
+        if (!foundUser) {
+          alert("User not found");
+          return;
+        }
+        // Open or create chat with that user
+        const id1 = currentUser.uid;
+        const id2 = foundUser.uid;
+        const chatId = id1 < id2 ? id1 + "_" + id2 : id2 + "_" + id1;
+
+        openChat(chatId, foundUser);
+      });
     };
 
   </script>
