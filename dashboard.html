@@ -87,7 +87,7 @@
       justify-content: space-between;
     }
     .chat-item .name-id {
-      /* Will be bold if unread */
+      /* Bold when unread */
     }
     .chat-item.unread .name-id {
       font-weight: bold;
@@ -226,7 +226,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getDatabase, ref, get, child, push, set, onChildAdded, onValue, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getDatabase, ref, get, child, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
@@ -257,16 +257,15 @@
 
     let currentUser = null;
     let activeChatId = null;
-    // Keep a map of latest message data and read status per chat
-    let chatsMeta = {};  
-    // Format: { chatId1: { latestMsgText: "...", latestMsgTs: <timestamp>, unread: true/false }, chatId2: { ... } }
+    // stores metadata for each chat
+    let chatsMeta = {};
 
-    // Helper to sort chats by latest timestamp
-    function sortChatsByLatest(a, b) {
-      const ma = chatsMeta[a]?.latestMsgTs || 0;
-      const mb = chatsMeta[b]?.latestMsgTs || 0;
-      // descending: newest first
-      return mb - ma;
+    function sortChatIdsByLatest(chatIds) {
+      return chatIds.sort((a, b) => {
+        const ta = chatsMeta[a]?.latestMsgTs || 0;
+        const tb = chatsMeta[b]?.latestMsgTs || 0;
+        return tb - ta;
+      });
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -277,50 +276,55 @@
       currentUser = user;
 
       // get user name & ID
-      const uSnap = await get(ref(db, "users/" + currentUser.uid));
-      if (uSnap.exists()) {
-        const u = uSnap.val();
+      const usnap = await get(ref(db, "users/" + currentUser.uid));
+      if (usnap.exists()) {
+        const u = usnap.val();
         userNameEl.textContent = u.name || "N/A";
         userIdEl.textContent = u.idNumber || "N/A";
       }
 
-      // listener for when chats change (to build meta)
+      // Listen for new messages per chat to update metadata
       const chatsRef = ref(db, "chats");
-      // Use onValue or onChildAdded + onChildChanged to catch updates
       onChildAdded(chatsRef, snap => {
         const chatId = snap.key;
+        // only track chats involving this user
+        const ids = chatId.split("_");
+        if (!ids.includes(currentUser.uid)) return;
+
+        // Initialize meta if not yet
         if (!chatsMeta[chatId]) {
-          chatsMeta[chatId] = { latestMsgText: "", latestMsgTs: 0, unread: false };
+          chatsMeta[chatId] = {
+            latestMsgTs: 0,
+            latestMsgText: "",
+            unread: false
+          };
         }
-        // Also listen for messages within this chat
+
         const msgsRef = ref(db, `chats/${chatId}/messages`);
         onChildAdded(msgsRef, msgSnap => {
           const m = msgSnap.val();
           const ts = m.ts || 0;
-          const text = m.text || "";
-          // update meta
+          // update if newer
           if (ts > (chatsMeta[chatId].latestMsgTs || 0)) {
             chatsMeta[chatId].latestMsgTs = ts;
-            chatsMeta[chatId].latestMsgText = text;
+            chatsMeta[chatId].latestMsgText = m.text || "";
           }
-          // If message is from someone else and this chat is not active, mark unread
+          // If message is from someone else, and this chat is not open, mark unread + sound
           if (m.sender !== currentUser.uid && activeChatId !== chatId) {
             chatsMeta[chatId].unread = true;
-            // play sound
+            // Play sound for new unread
             notifSound.play().catch(e => console.warn("Notif sound error:", e));
             renderChatList();
           }
-          else {
-            // if it is active chat, mark read
-            if (activeChatId === chatId) {
-              chatsMeta[chatId].unread = false;
-              renderChatList();
-            }
+          // If this chat is active, then it's read
+          if (activeChatId === chatId) {
+            chatsMeta[chatId].unread = false;
+            renderChatList();
           }
         });
       });
 
-      // initial render
+      // Initial render once metadata may start filling
       renderChatList();
     });
 
@@ -336,7 +340,6 @@
     };
 
     function renderChatList() {
-      // clear
       chatList.innerHTML = "";
       const chatsRef = ref(db, "chats");
       get(chatsRef).then(chatsSnap => {
@@ -349,34 +352,32 @@
           if (!ids.includes(currentUser.uid)) return;
           chatIds.push(chatId);
         });
-        // sort by latest message timestamp
-        chatIds.sort(sortChatsByLatest);
-        // for each, build item
-        chatIds.forEach(chatId => {
-          const meta = chatsMeta[chatId] || { latestMsgText: "", latestMsgTs: 0, unread: false };
+
+        const sorted = sortChatIdsByLatest(chatIds);
+
+        sorted.forEach(chatId => {
+          const meta = chatsMeta[chatId] || { latestMsgTs: 0, latestMsgText: "", unread: false };
           const ids = chatId.split("_");
-          const otherUid = (ids[0] === currentUser.uid ? ids[1] : ids[0]);
+          const otherUid = ids[0] === currentUser.uid ? ids[1] : ids[0];
           get(child(ref(db), "users/" + otherUid)).then(uSnap => {
             if (!uSnap.exists()) return;
             const u = uSnap.val();
-            // build element
             const div = document.createElement("div");
             div.className = "chat-item" + (meta.unread ? " unread" : "");
-            // top line with name and ID
+            // Name & ID
             const topLine = document.createElement("div");
             topLine.className = "top-line";
             const nameId = document.createElement("div");
             nameId.className = "name-id";
-            nameId.innerText = `${u.name} ${u.idNumber ? (" " + u.idNumber) : ""}`;
+            nameId.innerText = `${u.name} ${u.idNumber ? "(" + u.idNumber + ")" : ""}`;
             topLine.appendChild(nameId);
-            // optional: timestamp display could go at right but we skip for simplicity
             div.appendChild(topLine);
-            // latest message
+            // Latest message preview
             const lm = document.createElement("div");
             lm.className = "latest-msg";
-            lm.innerText = meta.latestMsgText || "";
+            lm.innerText = meta.latestMsgText;
             div.appendChild(lm);
-            // click to open chat
+            // click to open
             div.onclick = () => {
               openChat(chatId, u);
             };
@@ -388,7 +389,7 @@
 
     function openChat(chatId, u) {
       activeChatId = chatId;
-      // mark as read
+      // mark read
       if (chatsMeta[chatId]) {
         chatsMeta[chatId].unread = false;
       }
@@ -400,12 +401,12 @@
       onChildAdded(msgsRef, snap => {
         const m = snap.val();
         const isMine = (m.sender === currentUser.uid);
-        const div = document.createElement("div");
-        div.className = isMine ? "msg me" : "msg other";
-        div.textContent = m.text;
-        messagesDiv.appendChild(div);
+        const msgDiv = document.createElement("div");
+        msgDiv.className = isMine ? "msg me" : "msg other";
+        msgDiv.textContent = m.text;
+        messagesDiv.appendChild(msgDiv);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        // since user is seeing this chat, mark as read
+        // If message is from someone else in active chat, mark read
         if (!isMine) {
           if (chatsMeta[chatId]) {
             chatsMeta[chatId].unread = false;
@@ -413,7 +414,7 @@
           }
         }
       });
-      // re-render sidebar so bold/unread removal happens
+      // also render the list to update bold/unread removal
       renderChatList();
     }
 
@@ -455,6 +456,5 @@
     };
 
   </script>
-
 </body>
 </html>
