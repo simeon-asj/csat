@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Messenger-like Firebase Chat</title>
+  <title>Firebase Chat</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -46,214 +46,173 @@
     .to{background:var(--me);margin-left:auto;border-bottom-right-radius:4px}
     .time{display:block;font-size:11px;color:var(--muted);margin-top:6px}
 
-    .delete-btn,.edit-btn{position:absolute;top:-8px;background:#555;color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;display:none;}
-    .delete-btn{right:-8px;background:#ff5c5c;}
-    .edit-btn{right:18px;background:#0078ff;}
-    .bubble-row:hover .delete-btn,.bubble-row:hover .edit-btn{display:block;}
-
     /* Input area */
     .composer{padding:12px;border-top:1px solid #eef1f5;display:flex;gap:10px;align-items:center}
-    .composer .actions{display:flex;gap:8px}
     .composer input[type='text']{flex:1;padding:10px 12px;border-radius:999px;border:1px solid #e8ebf0;background:#fff}
     .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
 
-    /* responsive */
+    .muted{color:var(--muted);font-size:13px}
     @media (max-width:880px){.sidebar{display:none}.app{max-width:100%;height:100vh;border-radius:0}}
   </style>
 </head>
 <body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="search">
+        <input id="search" placeholder="Search or start new chat" />
+      </div>
+      <div class="contacts" id="contacts"></div>
+    </aside>
 
-<div class="app">
-  <aside class="sidebar">
-    <div class="search">
-      <input id="search" placeholder="Search or start new chat" />
-    </div>
-    <div class="contacts" id="contacts"></div>
-  </aside>
-
-  <main class="main">
-    <div class="header">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div class="avatar" id="chatAvatar">A</div>
-        <div>
-          <div class="title" id="chatName">Select a conversation</div>
-          <div class="subtitle" id="chatStatus">Offline</div>
+    <main class="main">
+      <div class="header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="avatar" id="chatAvatar">A</div>
+          <div>
+            <div class="title" id="chatName">Select a conversation</div>
+            <div class="subtitle" id="chatStatus">Offline</div>
+          </div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn" id="newChat">New Chat</button>
         </div>
       </div>
-    </div>
 
-    <div class="messages" id="messages"></div>
+      <div class="messages" id="messages"></div>
 
-    <div class="composer">
-      <div class="actions">
-        <label title="Attach file" style="cursor:pointer">
-          <input id="fileInput" type="file" style="display:none" />
-          📎
-        </label>
-        <button id="emojiBtn" title="Emoji">😊</button>
+      <div class="composer">
+        <input id="msgInput" type="text" placeholder="Type a message... (press Enter to send)" />
+        <button class="btn" id="sendBtn">Send</button>
       </div>
-      <input id="msgInput" type="text" placeholder="Type a message... (press Enter to send)" />
-      <button class="btn" id="sendBtn">Send</button>
-    </div>
-  </main>
-</div>
+    </main>
+  </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getDatabase, ref, child, get, push, update, onChildAdded, onValue, remove, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
-  // 🔹 Your Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
-    authDomain: "csat-2d59c.firebaseapp.com",
-    databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "csat-2d59c",
-    storageBucket: "csat-2d59c.firebasedestorage.app",
-    messagingSenderId: "250094013303",
-    appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
-    measurementId: "G-YEJ32DTM64"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
+      authDomain: "csat-2d59c.firebaseapp.com",
+      databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "csat-2d59c",
+      storageBucket: "csat-2d59c.firebasedestorage.app",
+      messagingSenderId: "250094013303",
+      appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
+      measurementId: "G-YEJ32DTM64"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth();
 
-  const contactsEl = document.getElementById('contacts');
-  const messagesEl = document.getElementById('messages');
-  const chatNameEl = document.getElementById('chatName');
-  const chatAvatarEl = document.getElementById('chatAvatar');
-  const chatStatusEl = document.getElementById('chatStatus');
-  const msgInput = document.getElementById("msgInput");
-  const sendBtn = document.getElementById("sendBtn");
+    let currentUser = null;
+    let activeChatId = null;
+    let otherUserId = null;
 
-  let currentUser = null;
-  let activeChatId = null;
-  let activeOtherUid = null;
+    const contactsEl = document.getElementById('contacts');
+    const messagesEl = document.getElementById('messages');
+    const chatNameEl = document.getElementById('chatName');
+    const chatAvatarEl = document.getElementById('chatAvatar');
+    const chatStatusEl = document.getElementById('chatStatus');
+    const msgInput = document.getElementById('msgInput');
+    const sendBtn = document.getElementById('sendBtn');
 
-  // === Auth ===
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      currentUser = user;
-      loadChatList();
-    } else {
-      alert("Not logged in!");
-    }
-  });
-
-  // === Load Chat List ===
-  function loadChatList() {
-    const metaRef = ref(db, "chatsMeta/" + currentUser.uid);
-    onValue(metaRef, snap => {
-      contactsEl.innerHTML = "";
-      if (!snap.exists()) return;
-
-      const chats = snap.val();
-      Object.keys(chats).forEach(chatId => {
-        const meta = chats[chatId];
-        const ids = chatId.split("_");
-        const otherUid = ids[0] === currentUser.uid ? ids[1] : ids[0];
-        get(child(ref(db), "users/" + otherUid)).then(uSnap => {
-          if (!uSnap.exists()) return;
-          const u = uSnap.val();
-          const el = document.createElement("div");
-          el.className = "contact";
-          const initials = (u.name || "U").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
-          el.innerHTML = `
-            <div class="avatar">${initials}</div>
-            <div class="meta">
-              <div style="display:flex;flex-direction:column">
-                <div class="name">${u.name || "Unknown"}</div>
-                <div class="last muted">${meta.latestMsgText || ""}</div>
-              </div>
-              <div class="time muted">${u.online ? "Online" : ""}</div>
+    function renderContacts(list) {
+      contactsEl.innerHTML = '';
+      list.forEach(c => {
+        const el = document.createElement('div');
+        el.className = 'contact';
+        el.innerHTML = `
+          <div class="avatar">${c.avatar}</div>
+          <div class="meta">
+            <div style="display:flex;flex-direction:column">
+              <div class="name">${c.name}</div>
+              <div class="last muted">${c.latestMsgText || ''}</div>
             </div>
-          `;
-          el.onclick = () => openChat(chatId, otherUid, u.name, initials, u.online);
-          contactsEl.appendChild(el);
-        });
+          </div>`;
+        el.onclick = () => openChat(c.chatId, c.otherUid, c.name, c.avatar);
+        contactsEl.appendChild(el);
       });
+    }
+
+    function renderMessages(snapshot) {
+      messagesEl.innerHTML = '';
+      snapshot.forEach(msgSnap => {
+        const m = msgSnap.val();
+        const row = document.createElement('div');
+        row.className = 'bubble-row';
+        const b = document.createElement('div');
+        b.className = 'bubble ' + (m.from === currentUser.uid ? 'to' : 'from');
+        b.innerHTML = `<div>${m.text}</div><div class='time'>${m.time}</div>`;
+        row.appendChild(b);
+        messagesEl.appendChild(row);
+      });
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function openChat(chatId, uid, name, avatar) {
+      activeChatId = chatId;
+      otherUserId = uid;
+      chatNameEl.textContent = name;
+      chatAvatarEl.textContent = avatar;
+      onValue(ref(db, "messages/" + chatId), renderMessages);
+    }
+
+    sendBtn.addEventListener("click", () => {
+      const text = msgInput.value.trim();
+      if (!text || !activeChatId) return;
+      const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+      push(ref(db, "messages/" + activeChatId), {
+        from: currentUser.uid,
+        text,
+        time: now
+      });
+
+      const metaUpdate = { latestMsgText: text, latestMsgTs: Date.now() };
+      update(ref(db, "chatsMeta/" + currentUser.uid + "/" + activeChatId), metaUpdate);
+      update(ref(db, "chatsMeta/" + otherUserId + "/" + activeChatId), metaUpdate);
+
+      msgInput.value = "";
     });
-  }
 
-  // === Open Chat ===
-  function openChat(chatId, otherUid, otherName, initials, online) {
-    activeChatId = chatId;
-    activeOtherUid = otherUid;
-    chatNameEl.textContent = otherName;
-    chatAvatarEl.textContent = initials;
-    chatStatusEl.textContent = online ? "Online" : "Offline";
-    messagesEl.innerHTML = "";
-    const msgsRef = ref(db, "messages/" + chatId);
-    onChildAdded(msgsRef, snap => {
-      const m = snap.val();
-      renderMessage(snap.key, m.from, m.text, m.time);
+    document.getElementById('newChat').addEventListener('click', () => {
+      const uid = prompt("Enter other user's UID:");
+      if (!uid || uid === currentUser.uid) return;
+      const chatId = [currentUser.uid, uid].sort().join("_");
+      const metaInit = { latestMsgText: '', latestMsgTs: Date.now() };
+      update(ref(db, "chatsMeta/" + currentUser.uid + "/" + chatId), metaInit);
+      update(ref(db, "chatsMeta/" + uid + "/" + chatId), metaInit);
+      openChat(chatId, uid, uid.substring(0,5).toUpperCase(), uid.substring(0,2).toUpperCase());
     });
-  }
 
-  // === Render Message ===
-  function renderMessage(key, from, text, time) {
-    const row = document.createElement("div");
-    row.className = "bubble-row";
-    const bubble = document.createElement("div");
-    bubble.className = "bubble " + (from === currentUser.uid ? "to" : "from");
-    bubble.innerHTML = `<div>${escapeHtml(text)}</div><div class='time'>${time}</div>`;
-
-    // Allow delete/edit only for my messages
-    if (from === currentUser.uid) {
-      const del = document.createElement("button");
-      del.className = "delete-btn";
-      del.textContent = "×";
-      del.onclick = () => remove(ref(db, "messages/" + activeChatId + "/" + key));
-
-      const edit = document.createElement("button");
-      edit.className = "edit-btn";
-      edit.textContent = "✎";
-      edit.onclick = () => {
-        const newTxt = prompt("Edit message:", text);
-        if (newTxt !== null) {
-          set(ref(db, "messages/" + activeChatId + "/" + key), {
-            from, text: newTxt, time
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+        onValue(ref(db, "chatsMeta/" + currentUser.uid), snap => {
+          const list = [];
+          snap.forEach(child => {
+            const chatId = child.key;
+            const meta = child.val();
+            const parts = chatId.split("_");
+            const otherUid = parts[0] === currentUser.uid ? parts[1] : parts[0];
+            list.push({
+              chatId,
+              otherUid,
+              name: otherUid.substring(0,5).toUpperCase(),
+              avatar: otherUid.substring(0,2).toUpperCase(),
+              latestMsgText: meta.latestMsgText || ''
+            });
           });
-        }
-      };
-      row.appendChild(del);
-      row.appendChild(edit);
-    }
-
-    row.appendChild(bubble);
-    if (from === currentUser.uid) row.style.justifyContent = "flex-end";
-    messagesEl.appendChild(row);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
-
-  // === Send Message ===
-  sendBtn.addEventListener("click", () => {
-    const text = msgInput.value.trim();
-    if (!text || !activeChatId) return;
-    const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-
-    push(ref(db, "messages/" + activeChatId), {
-      from: currentUser.uid,
-      text,
-      time: now
+          renderContacts(list);
+        });
+      }
     });
 
-    const metaUpdate = { latestMsgText: text, latestMsgTs: Date.now() };
-    update(ref(db, "chatsMeta/" + currentUser.uid + "/" + activeChatId), metaUpdate);
-    update(ref(db, "chatsMeta/" + activeOtherUid + "/" + activeChatId), metaUpdate);
-
-    msgInput.value = "";
-  });
-
-  msgInput.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      sendBtn.click();
-    }
-  });
-
-  function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-</script>
+    signInAnonymously(auth);
+  </script>
 </body>
 </html>
