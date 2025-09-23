@@ -1,427 +1,236 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>User Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Messenger-like Firebase Chat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    /* ===== Base ===== */
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Roboto, sans-serif;
-      background: #0e0e0e;
-      color: #fff;
-      height: 100vh;
-      display: flex;
+    :root{
+      --bg:#f0f2f5;
+      --panel:#ffffff;
+      --muted:#8a8f98;
+      --accent:#0078ff;
+      --bubble:#e4f0ff;
+      --me:#d2f8d2;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
     }
-    button, input {
-      outline: none;
-      border: none;
-      font-family: inherit;
-    }
-
-    /* ===== Sidebar ===== */
-    .sidebar {
-      width: 260px;
-      background: #1a1a1a;
-      display: flex;
-      flex-direction: column;
-      border-right: 1px solid #262626;
-    }
-    #userInfo {
-      padding: 12px;
-      background: #111;
-      border-bottom: 1px solid #262626;
-      font-size: 13px;
-    }
-    #userInfo b {
-      font-weight: 600;
-    }
-    #userId {
-      cursor: pointer;
-      color: #03a9f4;
-      text-decoration: underline;
-    }
-    #userId:hover {
-      color: #29b6f6;
-    }
-    .searchBox {
-      display: flex;
-      gap: 4px;
-      padding: 8px;
-      border-bottom: 1px solid #262626;
-    }
-    .searchBox input {
-      flex: 1;
-      padding: 6px 8px;
-      border-radius: 5px;
-      background: #242424;
-      color: #fff;
-      font-size: 13px;
-    }
-    .searchBox button {
-      padding: 6px 8px;
-      border-radius: 5px;
-      background: #e91e63;
-      color: #fff;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    #chatList {
-      flex: 1;
-      overflow-y: auto;
-      font-size: 13px;
-    }
-    .chat-item {
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-      border-bottom: 1px solid #262626;
-      cursor: pointer;
-    }
-    .chat-item:hover {
-      background: #2a2a2a;
-    }
-    .chat-item.unread .name-id {
-      font-weight: bold;
-    }
-    .chat-item .latest-msg {
-      color: #aaa;
-      font-size: 12px;
-      margin-top: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .online-label {
-      color: #4caf50;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    /* ===== Main ===== */
-    .main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    .header {
-      padding: 12px 16px;
-      background: #111;
-      font-weight: 600;
-      font-size: 14px;
-      border-bottom: 1px solid #262626;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .logout {
-      padding: 4px 10px;
-      border-radius: 5px;
-      background: #e53935;
-      color: #fff;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    .logout:hover {
-      background: #d32f2f;
-    }
-
-    /* ===== Messages ===== */
-    .messages {
-      flex: 1;
-      padding: 16px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      background: #121212;
-    }
-    .msg {
-      max-width: 70%;
-      padding: 8px 12px;
-      border-radius: 18px;
-      font-size: 14px;
-      line-height: 1.4em;
-      position: relative;
-      word-wrap: break-word;
-    }
-    .msg.me {
-      align-self: flex-end;
-      background: #ff0073;
-      color: #fff;
-      border-bottom-right-radius: 4px;
-    }
-    .msg.other {
-      align-self: flex-start;
-      background: #2a2a2a;
-      color: #fff;
-      border-bottom-left-radius: 4px;
-    }
-
-    /* ===== Input Row ===== */
-    .inputRow {
-      display: flex;
-      padding: 12px 16px;
-      gap: 8px;
-      border-top: 1px solid #262626;
-      background: #111;
-    }
-    .inputRow input {
-      flex: 1;
-      padding: 10px 16px;
-      border-radius: 20px;
-      background: #242424;
-      color: #fff;
-      font-size: 14px;
-    }
-    .inputRow button {
-      padding: 10px 16px;
-      border-radius: 20px;
-      background: #e91e63;
-      color: #fff;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .inputRow button:hover {
-      background: #d81b60;
-    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:#111}
+    .app{display:flex;max-width:1100px;height:86vh;margin:30px auto;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+    .sidebar{width:320px;background:linear-gradient(180deg,#fff,#fbfdff);border-right:1px solid #e6e9ee;display:flex;flex-direction:column}
+    .sidebar .search{padding:18px}
+    .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e4e7eb;background:#f7f9fc}
+    .contacts{flex:1;overflow:auto;padding:6px 0}
+    .contact{display:flex;align-items:center;padding:12px 16px;gap:12px;cursor:pointer}
+    .contact:hover{background:#f5f7fb}
+    .avatar{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#cfe9ff,#ffdcdc);display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+    .meta{flex:1;display:flex;justify-content:space-between;align-items:center}
+    .meta .name{font-weight:600}
+    .meta .last{font-size:13px;color:var(--muted)}
+    .main{flex:1;display:flex;flex-direction:column;background:var(--panel)}
+    .header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid #eef1f5}
+    .header .title{font-weight:600}
+    .header .subtitle{font-size:13px;color:var(--muted);margin-left:8px}
+    .messages{flex:1;padding:20px;overflow:auto;background:linear-gradient(180deg, #f7fbff 0%, transparent 40%)}
+    .bubble-row{display:flex;margin-bottom:10px;align-items:flex-end;position:relative}
+    .bubble{max-width:70%;padding:10px 14px;border-radius:18px;line-height:1.2;font-size:14px;position:relative}
+    .from{background:var(--bubble);border-bottom-left-radius:4px}
+    .to{background:var(--me);margin-left:auto;border-bottom-right-radius:4px}
+    .time{display:block;font-size:11px;color:var(--muted);margin-top:6px}
+    .delete-btn,.edit-btn{position:absolute;top:-8px;background:#555;color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;display:none;}
+    .delete-btn{right:-8px;background:#ff5c5c;}
+    .edit-btn{right:18px;background:#0078ff;}
+    .bubble-row:hover .delete-btn,.bubble-row:hover .edit-btn{display:block;}
+    .composer{padding:12px;border-top:1px solid #eef1f5;display:flex;gap:10px;align-items:center}
+    .composer .actions{display:flex;gap:8px}
+    .composer input[type='text']{flex:1;padding:10px 12px;border-radius:999px;border:1px solid #e8ebf0;background:#fff}
+    .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
+    .muted{color:var(--muted);font-size:13px}
+    .typing{font-size:13px;color:var(--muted);padding-left:8px}
+    @media (max-width:880px){.sidebar{display:none}.app{max-width:100%;height:100vh;border-radius:0}}
   </style>
 </head>
 <body>
-
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div id="userInfo">
-      Logged in as: <b id="userName">Loading...</b><br>
-      ID: <small id="userId" title="Click to copy">Loading...</small>
-    </div>
-    <div class="searchBox">
-      <input id="searchUser" placeholder="Search ID…">
-      <button id="searchBtn">Go</button>
-    </div>
-    <div id="chatList"></div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="search"><input id="search" placeholder="Search or start new chat" /></div>
+      <div class="contacts" id="contacts"></div>
+    </aside>
+    <main class="main">
+      <div class="header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="avatar" id="chatAvatar">A</div>
+          <div>
+            <div class="title" id="chatName">Select a conversation</div>
+            <div class="subtitle" id="chatStatus">Offline</div>
+          </div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn" id="newChat">New Chat</button>
+        </div>
+      </div>
+      <div class="messages" id="messages"></div>
+      <div class="composer">
+        <div class="actions">
+          <label title="Attach file" style="cursor:pointer"><input id="fileInput" type="file" style="display:none" />📎</label>
+          <button id="emojiBtn" title="Emoji">😊</button>
+        </div>
+        <input id="msgInput" type="text" placeholder="Type a message... (press Enter to send)" />
+        <button class="btn" id="sendBtn">Send</button>
+      </div>
+    </main>
   </div>
-
-  <!-- Main Chat -->
-  <div class="main">
-    <div id="chatHeader" class="header">
-      Select a user
-      <button id="logoutBtn" class="logout">Logout</button>
-    </div>
-    <div id="messages" class="messages"></div>
-    <div class="inputRow">
-      <input id="msgInput" placeholder="Type a message">
-      <button id="sendBtn">Send</button>
-    </div>
-  </div>
-
-  <audio id="notifSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1152-pristine.mp3" preload="auto"></audio>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getDatabase, ref, get, child, push, set, onChildAdded, off } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    // === Import Firebase ===
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, push, update, remove, child, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
-      authDomain: "csat-2d59c.firebaseapp.com",
-      databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "csat-2d59c",
-      storageBucket: "csat-2d59c.firebasedestorage.app",
-      messagingSenderId: "250094013303",
-      appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
-      measurementId: "G-YEJ32DTM64"
-    };
-
+    // === CONFIG (replace with your Firebase config) ===
+    const firebaseConfig = { /* your firebase config */ };
     const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
     const auth = getAuth(app);
-    const db   = getDatabase(app);
 
-    const logoutBtn   = document.getElementById("logoutBtn");
-    const chatList    = document.getElementById("chatList");
-    const msgInput    = document.getElementById("msgInput");
-    const sendBtn     = document.getElementById("sendBtn");
-    const chatHeader  = document.getElementById("chatHeader");
-    const messagesDiv = document.getElementById("messages");
-    const searchBtn   = document.getElementById("searchBtn");
-    const searchInput = document.getElementById("searchUser");
-    const notifSound  = document.getElementById("notifSound");
-    const userNameEl  = document.getElementById("userName");
-    const userIdEl    = document.getElementById("userId");
+    // === UI Elements ===
+    const contactsEl = document.getElementById("contacts");
+    const messagesEl = document.getElementById("messages");
+    const chatNameEl = document.getElementById("chatName");
+    const chatAvatarEl = document.getElementById("chatAvatar");
+    const chatStatusEl = document.getElementById("chatStatus");
+    const msgInput = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
 
     let currentUser = null;
     let activeChatId = null;
-    let activeMessagesRef = null;
     let chatsMeta = {};
 
-    function sortChatIdsByLatest(chatIds) {
-      return chatIds.sort((a, b) => {
-        const ta = chatsMeta[a]?.latestMsgTs || 0;
-        const tb = chatsMeta[b]?.latestMsgTs || 0;
-        return tb - ta;
-      });
-    }
-
-    onAuthStateChanged(auth, async (user) => {
+    // === LOGIN ===
+    onAuthStateChanged(auth, user => {
       if (!user) {
-        location.href = "index.html";
+        alert("Please log in first!");
         return;
       }
       currentUser = user;
+      loadChatList();
+    });
 
-      const usnap = await get(ref(db, "users/" + currentUser.uid));
-      if (usnap.exists()) {
-        const u = usnap.val();
-        userNameEl.textContent = u.name || "N/A";
-        userIdEl.textContent = u.idNumber || "N/A";
-      }
-
-      const chatsRef = ref(db, "chats");
-      onChildAdded(chatsRef, snap => {
-        const chatId = snap.key;
-        const ids = chatId.split("_");
-        if (!ids.includes(currentUser.uid)) return;
-
-        if (!chatsMeta[chatId]) {
-          chatsMeta[chatId] = { latestMsgTs: 0, latestMsgText: "", unread: false };
-        }
-
-        const msgsRef = ref(db, `chats/${chatId}/messages`);
-        onChildAdded(msgsRef, msgSnap => {
-          const m = msgSnap.val();
-          const ts = m.ts || 0;
-          if (ts > (chatsMeta[chatId].latestMsgTs || 0)) {
-            chatsMeta[chatId].latestMsgTs = ts;
-            chatsMeta[chatId].latestMsgText = m.text || "";
-          }
-          if (m.sender !== currentUser.uid && activeChatId !== chatId) {
-            chatsMeta[chatId].unread = true;
-            notifSound.play().catch(() => {});
-          }
-          if (activeChatId === chatId) {
-            chatsMeta[chatId].unread = false;
-          }
-          renderChatList();
-        });
+    // === CONTACTS (chat list) ===
+    function loadChatList() {
+      onValue(ref(db, "chatsMeta/" + currentUser.uid), snap => {
+        chatsMeta = snap.val() || {};
+        renderContacts();
       });
-      renderChatList();
-    });
+    }
 
-    userIdEl.addEventListener("click", () => {
-      navigator.clipboard.writeText(userIdEl.textContent)
-        .then(() => alert("User ID copied!"))
-        .catch(() => alert("Failed to copy ID."));
-    });
-
-    logoutBtn.onclick = async () => {
-      await signOut(auth);
-      location.href = "index.html";
-    };
-
-    function renderChatList() {
-      chatList.innerHTML = "";
-      const chatIds = Object.keys(chatsMeta);
-      const sorted = sortChatIdsByLatest(chatIds);
-
-      sorted.forEach(chatId => {
+    function renderContacts(filter = "") {
+      contactsEl.innerHTML = "";
+      const chatIds = Object.keys(chatsMeta || {});
+      chatIds.forEach(chatId => {
         const meta = chatsMeta[chatId];
         const ids = chatId.split("_");
         const otherUid = ids[0] === currentUser.uid ? ids[1] : ids[0];
-
         get(child(ref(db), "users/" + otherUid)).then(uSnap => {
           if (!uSnap.exists()) return;
           const u = uSnap.val();
+          if (!u.name.toLowerCase().includes(filter.toLowerCase())) return;
 
-          const div = document.createElement("div");
-          div.className = "chat-item" + (meta.unread ? " unread" : "");
-
-          const topLine = document.createElement("div");
-          topLine.className = "top-line";
-
-          const nameId = document.createElement("div");
-          nameId.className = "name-id";
-          nameId.innerText = u.name || "N/A";
-
-          const onlineLabel = document.createElement("div");
-          onlineLabel.className = "online-label";
-          onlineLabel.textContent = (u.online === true || u.online === "true") ? "online" : "";
-
-          topLine.appendChild(nameId);
-          topLine.appendChild(onlineLabel);
-          div.appendChild(topLine);
-
-          const msgPreview = document.createElement("div");
-          msgPreview.className = "latest-msg";
-          msgPreview.innerText = meta.latestMsgText || "";
-          div.appendChild(msgPreview);
-
-          div.onclick = () => openChat(otherUid, chatId, u.name);
-          chatList.appendChild(div);
+          const el = document.createElement("div");
+          el.className = "contact";
+          el.innerHTML = `
+            <div class="avatar">${(u.name[0] || "?").toUpperCase()}</div>
+            <div class="meta">
+              <div style="display:flex;flex-direction:column">
+                <div class="name">${u.name}</div>
+                <div class="last muted">${meta.latestMsgText || ""}</div>
+              </div>
+              <div class="time muted">${u.online ? "online" : ""}</div>
+            </div>
+          `;
+          el.onclick = () => openChat(otherUid, chatId, u);
+          contactsEl.appendChild(el);
         });
       });
     }
 
-    async function openChat(otherUid, chatId, otherName) {
+    document.getElementById("search").addEventListener("input", e => renderContacts(e.target.value));
+
+    // === OPEN CHAT ===
+    function openChat(otherUid, chatId, userObj) {
       activeChatId = chatId;
-      chatHeader.textContent = `Chat with ${otherName}`;
-      messagesDiv.innerHTML = "";
-
-      if (activeMessagesRef) off(activeMessagesRef, "child_added");
-      activeMessagesRef = ref(db, `chats/${chatId}/messages`);
-
-      get(activeMessagesRef).then(snap => {
-        messagesDiv.innerHTML = "";
-        snap.forEach(childSnap => appendMessage(childSnap.val()));
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      });
-
-      onChildAdded(activeMessagesRef, snap => {
-        const m = snap.val();
-        if (messagesDiv.querySelector(`[data-ts="${m.ts}"]`)) return;
-        appendMessage(m);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      });
-
-      if (chatsMeta[chatId]) {
-        chatsMeta[chatId].unread = false;
-        renderChatList();
-      }
+      chatNameEl.textContent = userObj.name;
+      chatAvatarEl.textContent = (userObj.name[0] || "?").toUpperCase();
+      chatStatusEl.textContent = userObj.online ? "online" : "offline";
+      loadMessages(chatId);
     }
 
-    function appendMessage(msg) {
-      const div = document.createElement("div");
-      div.className = "msg " + (msg.sender === currentUser.uid ? "me" : "other");
-      div.textContent = msg.text;
-      div.dataset.ts = msg.ts || Date.now();
-      messagesDiv.appendChild(div);
+    // === MESSAGES ===
+    function loadMessages(chatId) {
+      messagesEl.innerHTML = "";
+      onValue(ref(db, "messages/" + chatId), snap => {
+        messagesEl.innerHTML = "";
+        snap.forEach(msgSnap => {
+          const msg = msgSnap.val();
+          renderMessage(msg, msgSnap.key, chatId);
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      });
     }
 
-    sendBtn.onclick = async () => {
-      if (!activeChatId) {
-        alert("Please select a user first.");
-        return;
+    function renderMessage(m, msgId, chatId) {
+      const row = document.createElement("div");
+      row.className = "bubble-row";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble " + (m.from === currentUser.uid ? "to" : "from");
+      bubble.innerHTML = `<div>${escapeHtml(m.text)}</div><div class="time">${m.time || ""}</div>`;
+
+      if (m.from === currentUser.uid) {
+        const del = document.createElement("button");
+        del.className = "delete-btn";
+        del.textContent = "×";
+        del.onclick = () => remove(ref(db, "messages/" + chatId + "/" + msgId));
+
+        const edit = document.createElement("button");
+        edit.className = "edit-btn";
+        edit.textContent = "✎";
+        edit.onclick = () => {
+          const newTxt = prompt("Edit message:", m.text);
+          if (newTxt) update(ref(db, "messages/" + chatId + "/" + msgId), { text: newTxt });
+        };
+
+        row.appendChild(edit);
+        row.appendChild(del);
       }
+
+      row.appendChild(bubble);
+      messagesEl.appendChild(row);
+    }
+
+    // === SEND ===
+    sendBtn.addEventListener("click", () => {
       const text = msgInput.value.trim();
-      if (!text) return;
-      const newMsgRef = push(ref(db, `chats/${activeChatId}/messages`));
-      await set(newMsgRef, { text, sender: currentUser.uid, ts: Date.now() });
+      if (!text || !activeChatId) return;
+      const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      push(ref(db, "messages/" + activeChatId), {
+        from: currentUser.uid,
+        text,
+        time: now
+      });
+      update(ref(db, "chatsMeta/" + currentUser.uid + "/" + activeChatId), { latestMsgText: text });
       msgInput.value = "";
-    };
+    });
 
-    searchBtn.onclick = async () => {
-      const searchId = searchInput.value.trim();
-      if (!searchId) return;
-      const userSnap = await get(ref(db, "users/" + searchId));
-      if (!userSnap.exists()) {
-        alert("User not found!");
-        return;
+    msgInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendBtn.click();
       }
-      const ids = [currentUser.uid, searchId].sort();
-      const chatId = ids.join("_");
-      openChat(searchId, chatId, userSnap.val().name || "User");
-    };
+    });
+
+    function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
   </script>
 </body>
 </html>
