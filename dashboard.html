@@ -296,41 +296,73 @@
     }
 
     onAuthStateChanged(auth, async (user) => {
-      if(!user){ location.href="index.html"; return; }
-      currentUser = user;
-      const meSnap = await get(ref(db, "users/" + currentUser.uid));
-      if(meSnap.exists()){
-        const u = meSnap.val();
-        meNameEl.textContent = u.name || (currentUser.email || 'You');
-        meIdEl.textContent = u.idNumber || currentUser.uid;
-      } else {
-        meNameEl.textContent = currentUser.email || 'You';
-        meIdEl.textContent = currentUser.uid;
+  if(!user){ location.href="index.html"; return; }
+  currentUser = user;
+  const meSnap = await get(ref(db, "users/" + currentUser.uid));
+  if(meSnap.exists()){
+    const u = meSnap.val();
+    meNameEl.textContent = u.name || (currentUser.email || 'You');
+    meIdEl.textContent = u.idNumber || currentUser.uid;
+  } else {
+    meNameEl.textContent = currentUser.email || 'You';
+    meIdEl.textContent = currentUser.uid;
+  }
+
+  const chatsRoot = ref(db, "chats");
+
+  // 1️⃣ Load existing chats once
+  const chatsSnap = await get(chatsRoot);
+  if(chatsSnap.exists()){
+    chatsSnap.forEach(chatSnap=>{
+      const chatId = chatSnap.key;
+      if(!chatId) return;
+      const ids = chatId.split("_");
+      if(!ids.includes(currentUser.uid)) return;
+
+      if(!chatsMeta[chatId]) chatsMeta[chatId] = { latestMsgTs: 0, latestMsgText: "", unread: false };
+
+      const msgsRef = ref(db, `chats/${chatId}/messages`);
+      get(msgsRef).then(msgsSnap=>{
+        if(msgsSnap.exists()){
+          msgsSnap.forEach(childSnap=>{
+            const m = childSnap.val();
+            if(m && m.ts > (chatsMeta[chatId].latestMsgTs || 0)){
+              chatsMeta[chatId].latestMsgTs = m.ts;
+              chatsMeta[chatId].latestMsgText = (m.text||'').slice(0,80);
+            }
+          });
+        }
+      });
+    });
+  }
+
+  renderContacts(); // show old chats
+
+  // 2️⃣ Attach listener for new chats
+  onChildAdded(chatsRoot, snap => {
+    const chatId = snap.key;
+    if(!chatId) return;
+    const ids = chatId.split("_");
+    if(!ids.includes(currentUser.uid)) return;
+
+    if(!chatsMeta[chatId]) chatsMeta[chatId] = { latestMsgTs: 0, latestMsgText: "", unread: false };
+
+    const msgsRef = ref(db, `chats/${chatId}/messages`);
+    onChildAdded(msgsRef, msgSnap => {
+      const m = msgSnap.val();
+      const ts = m?.ts || 0;
+      if(ts > (chatsMeta[chatId].latestMsgTs || 0)){
+        chatsMeta[chatId].latestMsgTs = ts;
+        chatsMeta[chatId].latestMsgText = (m.text || '').slice(0,80);
+        renderContacts(searchContacts.value || '');
       }
-
-     onChildAdded(chatsRoot, snap => {
-  const chatId = snap.key;
-  if(!chatId) return;
-  const ids = chatId.split("_");
-  if(!ids.includes(currentUser.uid)) return;
-  if(!chatsMeta[chatId]) chatsMeta[chatId] = { latestMsgTs: 0, latestMsgText: "", unread: false };
-
-  const msgsRef = ref(db, `chats/${chatId}/messages`);
-  onChildAdded(msgsRef, msgSnap => {
-    const m = msgSnap.val();
-    const ts = m?.ts || 0;
-    if(ts > (chatsMeta[chatId].latestMsgTs || 0)){
-      chatsMeta[chatId].latestMsgTs = ts;
-      chatsMeta[chatId].latestMsgText = (m.text || '').slice(0,80);
-      // Only render the sidebar when the latest message changes
-      renderContacts(searchContacts.value || '');
-    }
-    if(m && m.sender !== currentUser.uid && activeChatId !== chatId){
-      chatsMeta[chatId].unread = true;
-      notifSound.currentTime=0; notifSound.play().catch(()=>{});
-      renderContacts(searchContacts.value || '');
-    }
-    if(activeChatId === chatId) chatsMeta[chatId].unread=false;
+      if(m && m.sender !== currentUser.uid && activeChatId !== chatId){
+        chatsMeta[chatId].unread = true;
+        notifSound.currentTime=0; notifSound.play().catch(()=>{});
+        renderContacts(searchContacts.value || '');
+      }
+      if(activeChatId === chatId) chatsMeta[chatId].unread=false;
+    });
   });
 });
 
