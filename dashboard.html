@@ -295,24 +295,19 @@
       });
     }
 
-   const chatsRoot = ref(db, "chats"); // define it once at top
+   const chatsRoot = ref(db, "chats"); // define at top
 
 onAuthStateChanged(auth, async (user) => {
   if(!user){ location.href="index.html"; return; }
   currentUser = user;
 
-  // fetch current user info
-  const meSnap = await get(ref(db, "users/" + currentUser.uid));
-  if(meSnap.exists()){
-    const u = meSnap.val();
-    meNameEl.textContent = u.name || (currentUser.email || 'You');
-    meIdEl.textContent = u.idNumber || currentUser.uid;
-  } else {
-    meNameEl.textContent = currentUser.email || 'You';
-    meIdEl.textContent = currentUser.uid;
-  }
+  // fetch user info
+  const meSnap = await get(ref(db, `users/${currentUser.uid}`));
+  const u = meSnap.exists() ? meSnap.val() : {};
+  meNameEl.textContent = u.name || currentUser.email || 'You';
+  meIdEl.textContent = u.idNumber || currentUser.uid;
 
-  // fetch all existing chats once
+  // fetch all chats
   const allChatsSnap = await get(chatsRoot);
   if(allChatsSnap.exists()){
     allChatsSnap.forEach(chatSnap => {
@@ -326,9 +321,9 @@ onAuthStateChanged(auth, async (user) => {
       const msgsRef = ref(db, `chats/${chatId}/messages`);
       get(msgsRef).then(msgsSnap=>{
         if(msgsSnap.exists()){
-          msgsSnap.forEach(childSnap=>{
-            const m = childSnap.val();
-            if(m && m.ts > (chatsMeta[chatId].latestMsgTs || 0)){
+          msgsSnap.forEach(msgSnap=>{
+            const m = msgSnap.val();
+            if(m?.ts > (chatsMeta[chatId].latestMsgTs || 0)){
               chatsMeta[chatId].latestMsgTs = m.ts;
               chatsMeta[chatId].latestMsgText = (m.text||'').slice(0,80);
             }
@@ -368,6 +363,7 @@ onAuthStateChanged(auth, async (user) => {
     });
   });
 });
+
 
 
 
