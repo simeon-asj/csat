@@ -1,11 +1,196 @@
-<!doctype html> <html lang="en"> <head> <meta charset="utf-8" /> <meta name="viewport" content="width=device-width, initial-scale=1" /> <title>Firebase Chat</title> <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet"> <style> :root{ --bg:#f0f2f5; --panel:#ffffff; --muted:#8a8f98; --accent:#0078ff; --bubble:#e4f0ff; --me:#d2f8d2; --shadow: 0 4px 12px rgba(15, 23, 42, 0.08); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; } *{box-sizing:border-box} html,body{height:100%;margin:0;background:var(--bg);color:#111} .app{display:flex;max-width:1100px;height:86vh;margin:30px auto;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);} /* Sidebar */ .sidebar{width:320px;background:linear-gradient(180deg,#fff,#fbfdff);border-right:1px solid #e6e9ee;display:flex;flex-direction:column} .sidebar .search{padding:18px} .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e4e7eb;background:#f7f9fc} .contacts{flex:1;overflow:auto;padding:6px 0} .contact{display:flex;align-items:center;padding:12px 16px;gap:12px;cursor:pointer} .contact:hover{background:#f5f7fb} .avatar{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#cfe9ff,#ffdcdc);display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#fff} .meta{flex:1;display:flex;justify-content:space-between;align-items:center} .meta .name{font-weight:600} .meta .last{font-size:13px;color:var(--muted)} /* Main area */ .main{flex:1;display:flex;flex-direction:column;background:var(--panel)} .header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid #eef1f5} .header .title{font-weight:600} .header .subtitle{font-size:13px;color:var(--muted);margin-left:8px} .messages{flex:1;padding:20px;overflow:auto;background:linear-gradient(180deg, #f7fbff 0%, transparent 40%)} .bubble-row{display:flex;margin-bottom:10px;align-items:flex-end;position:relative} .bubble{max-width:70%;padding:10px 14px;border-radius:18px;line-height:1.2;font-size:14px;position:relative} .from{background:var(--bubble);border-bottom-left-radius:4px} .to{background:var(--me);margin-left:auto;border-bottom-right-radius:4px} .time{display:block;font-size:11px;color:var(--muted);margin-top:6px} /* Input area */ .composer{padding:12px;border-top:1px solid #eef1f5;display:flex;gap:10px;align-items:center} .composer input[type='text']{flex:1;padding:10px 12px;border-radius:999px;border:1px solid #e8ebf0;background:#fff} .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer} .muted{color:var(--muted);font-size:13px} @media (max-width:880px){.sidebar{display:none}.app{max-width:100%;height:100vh;border-radius:0}} </style> </head> <body> <div class="app"> <aside class="sidebar"> <div class="search"> <input id="search" placeholder="Search or start new chat" /> </div> <div class="contacts" id="contacts"></div> </aside> <main class="main"> <div class="header"> <div style="display:flex;align-items:center;gap:12px"> <div class="avatar" id="chatAvatar">A</div> <div> <div class="title" id="chatName">Select a conversation</div> <div class="subtitle" id="chatStatus">Offline</div> </div> </div> <div style="margin-left:auto;display:flex;gap:8px;align-items:center"> <button class="btn" id="newChat">New Chat</button> </div> </div> <div class="messages" id="messages"></div> <div class="composer"> <input id="msgInput" type="text" placeholder="Type a message... (press Enter to send)" /> <button class="btn" id="sendBtn">Send</button> </div> </main> </div>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Firebase Chat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --panel: #ffffff;
+      --muted: #8a8f98;
+      --accent: #0078ff;
+      --bubble: #e4f0ff;
+      --me: #d2f8d2;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; background: var(--bg); color: #111; }
 
-  <!-- Firebase Script -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    .app {
+      display: flex;
+      max-width: 1100px;
+      height: 86vh;
+      margin: 30px auto;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
 
+    .sidebar {
+      width: 320px;
+      background: linear-gradient(180deg,#fff,#fbfdff);
+      border-right: 1px solid #e6e9ee;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar .search { padding: 18px; }
+    .search input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #e4e7eb;
+      background: #f7f9fc;
+    }
+    .contacts { flex: 1; overflow: auto; padding: 6px 0; }
+    .contact {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .contact:hover { background: #f5f7fb; }
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #cfe9ff, #ffdcdc);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+    }
+    .meta { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+    .meta .name { font-weight: 600; }
+    .meta .last { font-size: 13px; color: var(--muted); }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--panel);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid #eef1f5;
+    }
+    .header .title { font-weight: 600; }
+    .header .subtitle { font-size: 13px; color: var(--muted); margin-left: 8px; }
+    .messages {
+      flex: 1;
+      padding: 20px;
+      overflow: auto;
+      background: linear-gradient(180deg, #f7fbff 0%, transparent 40%);
+    }
+    .bubble-row {
+      display: flex;
+      margin-bottom: 10px;
+      align-items: flex-end;
+      position: relative;
+    }
+    .bubble {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      line-height: 1.2;
+      font-size: 14px;
+      position: relative;
+    }
+    .from {
+      background: var(--bubble);
+      border-bottom-left-radius: 4px;
+    }
+    .to {
+      background: var(--me);
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    .time {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .composer {
+      padding: 12px;
+      border-top: 1px solid #eef1f5;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .composer input[type='text'] {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid #e8ebf0;
+      background: #fff;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 880px) {
+      .sidebar { display: none; }
+      .app { max-width: 100%; height: 100vh; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="search">
+        <input id="search" placeholder="Search or start new chat" />
+      </div>
+      <div class="contacts" id="contacts"></div>
+    </aside>
+
+    <main class="main">
+      <div class="header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="avatar" id="chatAvatar">A</div>
+          <div>
+            <div class="title" id="chatName">Select a conversation</div>
+            <div class="subtitle" id="chatStatus">Offline</div>
+          </div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn" id="newChat">New Chat</button>
+        </div>
+      </div>
+
+      <div class="messages" id="messages"></div>
+
+      <div class="composer">
+        <input id="msgInput" type="text" placeholder="Type a message... (press Enter to send)" />
+        <button class="btn" id="sendBtn">Send</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Firebase SDK (Compat version for GitHub Pages) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
       authDomain: "csat-2d59c.firebaseapp.com",
@@ -17,9 +202,9 @@
       measurementId: "G-YEJ32DTM64"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth();
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
 
     let currentUser = null;
     let activeChatId = null;
@@ -71,48 +256,23 @@
       otherUserId = uid;
       chatNameEl.textContent = name;
       chatAvatarEl.textContent = avatar;
-      onValue(ref(db, "messages/" + chatId), renderMessages);
-    }
-
-    function listenForChats() {
-      onValue(ref(db, "chatsMeta/" + currentUser.uid), snap => {
-        const list = [];
-        snap.forEach(child => {
-          const chatId = child.key;
-          const meta = child.val();
-          const parts = chatId.split("_");
-          const otherUid = parts[0] === currentUser.uid ? parts[1] : parts[0];
-          list.push({
-            chatId,
-            otherUid,
-            name: otherUid.substring(0, 5).toUpperCase(),
-            avatar: otherUid.substring(0, 2).toUpperCase(),
-            latestMsgText: meta.latestMsgText || ''
-          });
-
-          // ✅ Listen to each chat to update contact list live
-          onValue(ref(db, "messages/" + chatId), msgSnap => {
-            if (chatId === activeChatId) renderMessages(msgSnap);
-          });
-        });
-        renderContacts(list);
-      });
+      db.ref("messages/" + chatId).on('value', renderMessages);
     }
 
     function sendMessage() {
       const text = msgInput.value.trim();
       if (!text || !activeChatId) return;
-      const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      push(ref(db, "messages/" + activeChatId), {
+      db.ref("messages/" + activeChatId).push({
         from: currentUser.uid,
         text,
         time: now
       });
 
       const metaUpdate = { latestMsgText: text, latestMsgTs: Date.now() };
-      update(ref(db, "chatsMeta/" + currentUser.uid + "/" + activeChatId), metaUpdate);
-      update(ref(db, "chatsMeta/" + otherUserId + "/" + activeChatId), metaUpdate);
+      db.ref("chatsMeta/" + currentUser.uid + "/" + activeChatId).update(metaUpdate);
+      db.ref("chatsMeta/" + otherUserId + "/" + activeChatId).update(metaUpdate);
 
       msgInput.value = "";
     }
@@ -127,19 +287,35 @@
       if (!uid || uid === currentUser.uid) return;
       const chatId = [currentUser.uid, uid].sort().join("_");
       const metaInit = { latestMsgText: '', latestMsgTs: Date.now() };
-      update(ref(db, "chatsMeta/" + currentUser.uid + "/" + chatId), metaInit);
-      update(ref(db, "chatsMeta/" + uid + "/" + chatId), metaInit);
-      openChat(chatId, uid, uid.substring(0,5).toUpperCase(), uid.substring(0,2).toUpperCase());
+      db.ref("chatsMeta/" + currentUser.uid + "/" + chatId).update(metaInit);
+      db.ref("chatsMeta/" + uid + "/" + chatId).update(metaInit);
+      openChat(chatId, uid, uid.substring(0, 5).toUpperCase(), uid.substring(0, 2).toUpperCase());
     });
 
-    onAuthStateChanged(auth, (user) => {
+    auth.onAuthStateChanged(user => {
       if (user) {
         currentUser = user;
-        listenForChats();
+        db.ref("chatsMeta/" + currentUser.uid).on('value', snap => {
+          const list = [];
+          snap.forEach(child => {
+            const chatId = child.key;
+            const meta = child.val();
+            const parts = chatId.split("_");
+            const otherUid = parts[0] === currentUser.uid ? parts[1] : parts[0];
+            list.push({
+              chatId,
+              otherUid,
+              name: otherUid.substring(0, 5).toUpperCase(),
+              avatar: otherUid.substring(0, 2).toUpperCase(),
+              latestMsgText: meta.latestMsgText || ''
+            });
+          });
+          renderContacts(list);
+        });
       }
     });
 
-    signInAnonymously(auth);
+    auth.signInAnonymously();
   </script>
 </body>
 </html>
