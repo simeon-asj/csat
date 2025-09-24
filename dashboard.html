@@ -1,226 +1,140 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Messenger Dark Chat</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Messenger Dark Mode</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    <h1>CHAT V2</h1>
-    body {
-      margin:0;
-      font-family: Arial, sans-serif;
-      background:#18191a;
-      color:#e4e6eb;
-      display:flex;
-      height:100vh;
-      overflow:hidden;
+    :root{
+      --bg:#0f0f0f;
+      --panel:#1a1a1a;
+      --muted:#9ca3af;
+      --accent:#ff007a;
+      --bubble:#2a2a2a;
+      --me:#ff007a;
+      --shadow: 0 4px 12px rgba(0,0,0,0.5);
+      font-family: 'Inter', system-ui, sans-serif;
     }
-    .sidebar {
-      width:300px;
-      background:#242526;
-      border-right:1px solid #3a3b3c;
-      display:flex;
-      flex-direction:column;
-    }
-    .sidebar-header {
-      padding:12px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      border-bottom:1px solid #3a3b3c;
-    }
-    .contacts {
-      flex:1;
-      overflow-y:auto;
-    }
-    .contact {
-      display:flex;
-      align-items:center;
-      padding:10px;
-      cursor:pointer;
-      border-bottom:1px solid #3a3b3c;
-    }
-    .contact:hover {
-      background:#3a3b3c;
-    }
-    .avatar {
-      width:40px;
-      height:40px;
-      border-radius:50%;
-      background:linear-gradient(45deg,#8a3ab9,#bc2a8d);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:bold;
-      margin-right:10px;
-    }
-    .meta {
-      flex:1;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-    .name {
-      font-weight:bold;
-    }
-    .last {
-      font-size:13px;
-      color:#b0b3b8;
-    }
-    .time {
-      font-size:12px;
-      color:#b0b3b8;
-      margin-left:8px;
-    }
-    .chat-area {
-      flex:1;
-      display:flex;
-      flex-direction:column;
-    }
-    .chat-header {
-      padding:12px;
-      border-bottom:1px solid #3a3b3c;
-      font-weight:bold;
-    }
-    .messages {
-      flex:1;
-      overflow-y:auto;
-      padding:12px;
-      display:flex;
-      flex-direction:column;
-    }
-    .message {
-      max-width:60%;
-      margin:4px 0;
-      padding:8px 12px;
-      border-radius:18px;
-      line-height:1.4;
-    }
-    .sent {
-      align-self:flex-end;
-      background:#0084ff;
-      color:white;
-    }
-    .received {
-      align-self:flex-start;
-      background:#3a3b3c;
-      color:white;
-    }
-    .composer {
-      padding:10px;
-      border-top:1px solid #3a3b3c;
-      display:flex;
-    }
-    .composer input {
-      flex:1;
-      border:none;
-      border-radius:20px;
-      padding:10px 15px;
-      background:#3a3b3c;
-      color:white;
-      outline:none;
-    }
-    .composer button {
-      margin-left:8px;
-      padding:0 16px;
-      border:none;
-      border-radius:20px;
-      background:#0084ff;
-      color:white;
-      cursor:pointer;
-    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:#f9fafb}
+
+    .app{display:flex;max-width:1100px;height:90vh;margin:20px auto;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+
+    /* Sidebar */
+    .sidebar{width:320px;background:var(--panel);border-right:1px solid #2a2a2a;display:flex;flex-direction:column}
+    .sidebar .search{padding:18px}
+    .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #333;background:#111;color:#fff}
+    .contacts{flex:1;overflow:auto;padding:6px 0}
+    .contact{display:flex;align-items:center;padding:12px 16px;gap:12px;cursor:pointer;transition:background 0.2s}
+    .contact:hover{background:#2a2a2a}
+    .avatar{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#6366f1,#a855f7);display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+    .meta{flex:1;display:flex;justify-content:space-between;align-items:center}
+    .meta .name{font-weight:600}
+    .meta .last{font-size:13px;color:var(--muted)}
+
+    /* Main area */
+    .main{flex:1;display:flex;flex-direction:column;background:var(--panel)}
+    .header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid #2a2a2a}
+    .header .title{font-weight:600}
+    .header .subtitle{font-size:13px;color:var(--muted);margin-left:8px}
+    .messages{flex:1;padding:20px;overflow:auto}
+
+    .bubble-row{display:flex;margin-bottom:10px;align-items:flex-end;position:relative}
+    .bubble{max-width:70%;padding:10px 14px;border-radius:18px;line-height:1.2;font-size:14px;position:relative;color:#fff}
+    .from{background:var(--bubble);border-bottom-left-radius:4px}
+    .to{background:var(--me);margin-left:auto;border-bottom-right-radius:4px}
+    .time{display:block;font-size:11px;color:var(--muted);margin-top:6px}
+
+    .delete-btn,.edit-btn{position:absolute;top:-8px;background:#555;color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;display:none;}
+    .delete-btn{right:-8px;background:#ff5c5c;}
+    .edit-btn{right:18px;background:#0078ff;}
+    .bubble-row:hover .delete-btn,.bubble-row:hover .edit-btn{display:block;}
+
+    /* Input area */
+    .composer{padding:12px;border-top:1px solid #2a2a2a;display:flex;gap:10px;align-items:center}
+    .composer .actions{display:flex;gap:8px}
+    .composer input[type='text']{flex:1;padding:10px 12px;border-radius:999px;border:1px solid #333;background:#111;color:#fff}
+    .btn{background:var(--accent);color:#fff;padding:8px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+
+    /* responsive */
+    @media (max-width:880px){.sidebar{display:none}.app{max-width:100%;height:100vh;border-radius:0}}
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <span>Chats</span>
-      <button id="logoutBtn">Logout</button>
-    </div>
-    <div id="contactsList" class="contacts"></div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="search">
+        <input id="searchContacts" placeholder="Search conversations or user ID" />
+      </div>
+      <div class="contacts" id="contactsList"></div>
+    </aside>
+
+    <main class="main">
+      <div class="header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="avatar" id="chatAvatar">?</div>
+          <div>
+            <div class="title" id="chatName">Select a conversation</div>
+            <div class="subtitle" id="chatStatus"></div>
+          </div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn" id="newChat">New Chat</button>
+        </div>
+      </div>
+
+      <div class="messages" id="messages"></div>
+
+      <div class="composer">
+        <div class="actions">
+          <label title="Attach file" style="cursor:pointer">
+            <input id="fileInput" type="file" style="display:none" />
+            📎
+          </label>
+          <button id="emojiBtn" title="Emoji">😊</button>
+        </div>
+        <input id="msgInput" type="text" placeholder="Type a message... (press Enter to send)" />
+        <button class="btn" id="sendBtn">Send</button>
+      </div>
+    </main>
   </div>
 
-  <div class="chat-area">
-    <div id="chatHeader" class="chat-header">Select a chat</div>
-    <div id="messagesList" class="messages"></div>
-    <div class="composer">
-      <input id="messageInput" type="text" placeholder="Type a message..."/>
-      <button id="sendBtn">Send</button>
-    </div>
-  </div>
-
-  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, push, set, onChildAdded, serverTimestamp, get, child } 
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } 
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase, ref, push, set, onChildAdded, get, child } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // TODO: replace with your config
+    // 🔥 Your Firebase config here
     const firebaseConfig = {
       apiKey: "YOUR_KEY",
-      authDomain: "YOUR_APP.firebaseapp.com",
-      projectId: "YOUR_APP",
-      storageBucket: "YOUR_APP.appspot.com",
-      messagingSenderId: "XXXX",
-      appId: "1:XXXX:web:XXXX",
-      databaseURL: "https://YOUR_APP.firebaseio.com"
+      authDomain: "YOUR_DOMAIN",
+      databaseURL: "YOUR_DB",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_BUCKET",
+      messagingSenderId: "YOUR_SENDER",
+      appId: "YOUR_APPID"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
 
+    // DOM elements
     const contactsList = document.getElementById("contactsList");
-    const messagesList = document.getElementById("messagesList");
-    const chatHeader = document.getElementById("chatHeader");
-    const messageInput = document.getElementById("messageInput");
+    const messagesEl = document.getElementById("messages");
+    const chatNameEl = document.getElementById("chatName");
+    const chatAvatarEl = document.getElementById("chatAvatar");
+    const msgInput = document.getElementById("msgInput");
     const sendBtn = document.getElementById("sendBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
 
     let currentUser = null;
     let activeChatId = null;
-    let userCache = {};
     let chatsMeta = {};
+    let userCache = {};
+    let activeListeners = {};
 
-    // --- Auth ---
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUser = user;
-        loadUserChats();
-      } else {
-        signInWithPopup(auth, provider);
-      }
-    });
-
-    logoutBtn.onclick = () => signOut(auth);
-
-    // --- Load chats ---
-    function loadUserChats() {
-      const chatsRef = ref(db, "userChats/" + currentUser.uid);
-      onChildAdded(chatsRef, (snap) => {
-        const chatId = snap.key;
-        listenToChat(chatId);
-      });
-    }
-
-    function listenToChat(chatId) {
-      const msgsRef = ref(db, "chats/" + chatId + "/messages");
-      onChildAdded(msgsRef, (snap) => {
-        const msg = snap.val();
-        chatsMeta[chatId] = {
-          latestMsgText: msg.text,
-          latestMsgTs: msg.timestamp
-        };
-        updateContactRow(chatId);
-        if (activeChatId === chatId) {
-          renderMessage(msg);
-        }
-      });
-    }
-
+    // Get user info with cache
     async function getUserInfo(uid) {
       if (userCache[uid]) return userCache[uid];
       const snap = await get(child(ref(db), "users/" + uid));
@@ -228,14 +142,12 @@
         userCache[uid] = snap.val();
         return userCache[uid];
       }
-      return { name: "Unknown", uid };
+      return { name: "Unknown" };
     }
 
-    async function updateContactRow(chatId) {
-      const ids = chatId.split("_");
-      const otherUid = ids[0] === currentUser.uid ? ids[1] : ids[0];
+    // Render or update a contact row
+    async function renderContact(chatId, otherUid, meta) {
       const otherUser = await getUserInfo(otherUid);
-
       let row = document.querySelector(`[data-chatid="${chatId}"]`);
       if (!row) {
         row = document.createElement("div");
@@ -254,48 +166,67 @@
         `;
         contactsList.appendChild(row);
       }
-      row.querySelector(".last").textContent = chatsMeta[chatId]?.latestMsgText || "";
-      row.querySelector(".time").textContent = chatsMeta[chatId]?.latestMsgTs
-        ? new Date(chatsMeta[chatId].latestMsgTs).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})
+      row.querySelector(".last").textContent = meta.latestMsgText || "";
+      row.querySelector(".time").textContent = meta.latestMsgTs
+        ? new Date(meta.latestMsgTs).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
         : "";
     }
 
-    // --- Chat window ---
+    // Open chat
     function openChat(otherUid, chatId, name) {
       activeChatId = chatId;
-      chatHeader.textContent = name;
-      messagesList.innerHTML = "";
+      chatNameEl.textContent = name;
+      chatAvatarEl.textContent = name.slice(0,2).toUpperCase();
+      messagesEl.innerHTML = "";
 
-      const msgsRef = ref(db, "chats/" + chatId + "/messages");
-      onChildAdded(msgsRef, (snap) => {
-        renderMessage(snap.val());
-      });
+      if (!activeListeners[chatId]) {
+        const msgsRef = ref(db, "chats/" + chatId + "/messages");
+        onChildAdded(msgsRef, (snap) => {
+          renderMessage(snap.val());
+        });
+        activeListeners[chatId] = true;
+      }
     }
 
-    function renderMessage(msg) {
-      const div = document.createElement("div");
-      div.className = "message " + (msg.senderId === currentUser.uid ? "sent" : "received");
-      div.textContent = msg.text;
-      messagesList.appendChild(div);
-      messagesList.scrollTop = messagesList.scrollHeight;
+    // Render message bubble
+    function renderMessage(m) {
+      const row = document.createElement("div");
+      row.className = "bubble-row";
+      const b = document.createElement("div");
+      b.className = "bubble " + (m.from === currentUser.uid ? "to" : "from");
+      b.innerHTML = `<div>${escapeHtml(m.text)}</div><div class='time'>${new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>`;
+      row.appendChild(b);
+      messagesEl.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    sendBtn.onclick = sendMessage;
-    messageInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") sendMessage();
-    });
+    function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-    function sendMessage() {
-      if (!activeChatId || !messageInput.value.trim()) return;
-      const msg = {
-        senderId: currentUser.uid,
-        text: messageInput.value,
-        timestamp: Date.now()
-      };
+    // Send message
+    function sendMessage(text) {
+      if (!activeChatId || !text.trim()) return;
       const msgsRef = ref(db, "chats/" + activeChatId + "/messages");
-      push(msgsRef, msg);
-      messageInput.value = "";
+      const newMsgRef = push(msgsRef);
+      const msg = { text, from: currentUser.uid, ts: Date.now() };
+      set(newMsgRef, msg);
+      chatsMeta[activeChatId] = { latestMsgText: text, latestMsgTs: msg.ts };
     }
+
+    sendBtn.addEventListener("click", ()=>{
+      sendMessage(msgInput.value);
+      msgInput.value = "";
+    });
+    msgInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); sendBtn.click(); } });
+
+    // Auth state
+    onAuthStateChanged(auth, (user)=>{
+      if (user) {
+        currentUser = user;
+        console.log("Logged in:", user.uid);
+      } else {
+        console.log("Not logged in");
+      }
+    });
   </script>
 </body>
 </html>
