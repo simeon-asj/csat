@@ -308,30 +308,32 @@
         meIdEl.textContent = currentUser.uid;
       }
 
-      const chatsRoot = ref(db, "chats");
-      onChildAdded(chatsRoot, snap => {
-        const chatId = snap.key;
-        if(!chatId) return;
-        const ids = chatId.split("_");
-        if(!ids.includes(currentUser.uid)) return;
-        if(!chatsMeta[chatId]) chatsMeta[chatId] = { latestMsgTs: 0, latestMsgText: "", unread: false };
+     onChildAdded(chatsRoot, snap => {
+  const chatId = snap.key;
+  if(!chatId) return;
+  const ids = chatId.split("_");
+  if(!ids.includes(currentUser.uid)) return;
+  if(!chatsMeta[chatId]) chatsMeta[chatId] = { latestMsgTs: 0, latestMsgText: "", unread: false };
 
-        const msgsRef = ref(db, `chats/${chatId}/messages`);
-        onChildAdded(msgsRef, msgSnap => {
-          const m = msgSnap.val();
-          const ts = m?.ts || 0;
-          if(ts > (chatsMeta[chatId].latestMsgTs || 0)){
-            chatsMeta[chatId].latestMsgTs = ts;
-            chatsMeta[chatId].latestMsgText = (m.text || '').slice(0,80);
-          }
-          if(m && m.sender !== currentUser.uid && activeChatId !== chatId){
-            chatsMeta[chatId].unread = true;
-            notifSound.currentTime=0; notifSound.play().catch(()=>{});
-          }
-          if(activeChatId === chatId) chatsMeta[chatId].unread=false;
-          renderContacts();
-        });
-      });
+  const msgsRef = ref(db, `chats/${chatId}/messages`);
+  onChildAdded(msgsRef, msgSnap => {
+    const m = msgSnap.val();
+    const ts = m?.ts || 0;
+    if(ts > (chatsMeta[chatId].latestMsgTs || 0)){
+      chatsMeta[chatId].latestMsgTs = ts;
+      chatsMeta[chatId].latestMsgText = (m.text || '').slice(0,80);
+      // Only render the sidebar when the latest message changes
+      renderContacts(searchContacts.value || '');
+    }
+    if(m && m.sender !== currentUser.uid && activeChatId !== chatId){
+      chatsMeta[chatId].unread = true;
+      notifSound.currentTime=0; notifSound.play().catch(()=>{});
+      renderContacts(searchContacts.value || '');
+    }
+    if(activeChatId === chatId) chatsMeta[chatId].unread=false;
+  });
+});
+
 
       renderContacts();
     });
@@ -508,7 +510,8 @@
 
     msgInput.placeholder="Type a message... (press Enter to send)";
     messagesEl.innerHTML=`<div class="no-contacts">No conversation selected.</div>`;
-    setInterval(()=>{ renderContacts(searchContacts.value || ''); },1000);
+    
+    searchContacts.addEventListener('input', e => renderContacts(e.target.value));
   </script>
 </body>
 </html>
