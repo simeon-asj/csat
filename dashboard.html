@@ -92,11 +92,20 @@
     .messages {
     flex: 1;
     padding: 20px;
-    overflow: hidden; /* Removed scrollbar */
+    overflow-y: scroll; /* keep scrollable */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
     background:
       radial-gradient(600px 200px at 80% 10%, rgba(255,0,115,0.02), transparent 6%),
       linear-gradient(180deg, rgba(255,255,255,0.01), transparent 40%);
-}
+    }
+  
+  /* Chrome, Edge, Safari */
+  .messages::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    }
+
 
 
     .bubble-row{display:flex;margin-bottom:12px;align-items:flex-end;position:relative;max-width:100%}
