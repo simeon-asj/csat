@@ -413,7 +413,7 @@
           chatTitle.textContent='Select a conversation';
           chatAvatar.textContent='A';
         }
-        renderContacts(searchContacts.value || '');
+        updateSidebar(searchContacts.value || '');
       }catch(err){ console.error('Delete chat failed', err); alert('Failed to delete chat.'); }
       contactMenu.style.display='none';
     });
