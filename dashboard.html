@@ -70,6 +70,13 @@
     .meta .last{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
     .contact .time{font-size:12px;color:var(--muted-2)}
     .contact.unread .meta .name{font-weight:700}
+    .contact.unread {
+    background: rgba(255,0,115,0.05); /* subtle highlight */
+    }
+    .contact.unread .meta .last {
+    color: #fff; /* brighter preview */
+    }
+
     .no-contacts{padding:16px;color:var(--muted);font-size:13px}
 
     /* Main area */
@@ -231,12 +238,20 @@
     }
 
     function sortChatIdsByLatest(chatIds){
-      return chatIds.sort((a,b) => {
-        const ta = chatsMeta[a]?.latestMsgTs || 0;
-        const tb = chatsMeta[b]?.latestMsgTs || 0;
-        return tb - ta;
-      });
-    }
+  return chatIds.sort((a,b) => {
+    const ua = chatsMeta[a]?.unread ? 1 : 0;
+    const ub = chatsMeta[b]?.unread ? 1 : 0;
+
+    // unread first
+    if (ua !== ub) return ub - ua;
+
+    // then by latest timestamp
+    const ta = chatsMeta[a]?.latestMsgTs || 0;
+    const tb = chatsMeta[b]?.latestMsgTs || 0;
+    return tb - ta;
+  });
+}
+
 
     // Auth state
     onAuthStateChanged(auth, async (user) => {
