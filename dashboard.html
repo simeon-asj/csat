@@ -6,7 +6,6 @@
   <title>Messenger - Dark</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    /* ORIGINAL CSS – UNCHANGED */
     :root{
       --bg:#0b0c0f;
       --panel:#0f1114;
@@ -93,18 +92,21 @@
     .messages {
     flex: 1;
     padding: 20px;
-    overflow-y: scroll;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    overflow-y: scroll; /* keep scrollable */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
     background:
       radial-gradient(600px 200px at 80% 10%, rgba(255,0,115,0.02), transparent 6%),
       linear-gradient(180deg, rgba(255,255,255,0.01), transparent 40%);
     }
   
+  /* Chrome, Edge, Safari */
   .messages::-webkit-scrollbar {
     width: 0;
     height: 0;
-  }
+    }
+
+
 
     .bubble-row{display:flex;margin-bottom:12px;align-items:flex-end;position:relative;max-width:100%}
     .bubble{max-width:70%;padding:10px 14px;border-radius:18px;line-height:1.2;font-size:14px;position:relative;word-break:break-word}
@@ -152,18 +154,6 @@
       cursor:pointer;
     }
     .contact-menu button:hover{background:rgba(255,255,255,0.05);}
-
-    /* Reply preview */
-    #replyPreview{
-      display:none;
-      padding:6px 12px;
-      background: rgba(255,255,255,0.05);
-      border-top:1px solid rgba(255,255,255,0.02);
-      border-radius:6px 6px 0 0;
-      margin-bottom:6px;
-      font-size:13px;
-    }
-    #replyPreview span{font-weight:600}
   </style>
 </head>
 <body>
@@ -212,15 +202,10 @@
         </div>
       </div>
 
-      <!-- Messages -->
       <div class="messages" id="messages" role="log" aria-live="polite" aria-atomic="true">
         <div class="no-contacts">No conversation selected.</div>
       </div>
 
-      <!-- Reply preview -->
-      <div id="replyPreview"><span id="replyAuthor"></span>: <span id="replyText"></span> <button id="cancelReply" style="float:right;">✕</button></div>
-
-      <!-- Composer -->
       <div class="composer">
         <div class="actions">
           <label title="Attach file" style="cursor:pointer">
@@ -238,10 +223,12 @@
   <audio id="notifSound" src="https://cdn.pixabay.com/audio/2025/07/09/audio_121db7b43f.mp3" preload="auto"></audio>
 
   <script type="module">
-    // Your original Firebase and JS logic remains fully intact, plus added reply functionality
+    // Firebase imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getDatabase, ref, get, child, push, set, onChildAdded, off, remove, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import {
+      getDatabase, ref, get, child, push, set, onChildAdded, off, remove, update
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
@@ -258,86 +245,270 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Elements
+    // UI elements
     const contactsList = document.getElementById('contactsList');
     const searchContacts = document.getElementById('searchContacts');
     const meNameEl = document.getElementById('meName');
     const meIdEl = document.getElementById('meId');
     const logoutBtn = document.getElementById('logoutBtn');
     const newChatBtn = document.getElementById('newChatBtn');
+
     const chatAvatar = document.getElementById('chatAvatar');
     const chatTitle = document.getElementById('chatTitle');
     const chatSubtitle = document.getElementById('chatSubtitle');
     const messagesEl = document.getElementById('messages');
+
     const msgInput = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
     const fileInput = document.getElementById('fileInput');
     const emojiBtn = document.getElementById('emojiBtn');
     const notifSound = document.getElementById('notifSound');
+
+    // Context menu
     const contactMenu = document.getElementById('contactMenu');
     const deleteChatBtn = document.getElementById('deleteChatBtn');
+    let menuTargetChatId = null;
 
-    const replyPreview = document.getElementById('replyPreview');
-    const replyAuthor = document.getElementById('replyAuthor');
-    const replyText = document.getElementById('replyText');
-    const cancelReply = document.getElementById('cancelReply');
-    let currentReply = null;
+    // State
+    let currentUser = null;
+    let chatsMeta = {};
+    let activeChatId = null;
+    let activeOtherUid = null;
+    let activeMessagesRef = null;
+    let activeMessageListenerAttached = false;
 
-    let currentUser=null,chatsMeta={},activeChatId=null,activeOtherUid=null,activeMessagesRef=null,activeMessageListenerAttached=false;
+    function initialsFromName(name){
+      if(!name) return 'U';
+      const parts = String(name).split(' ').filter(Boolean);
+      if(parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+      return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+    }
 
-    function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-    function initialsFromName(name){if(!name)return'U';const parts=String(name).split(' ').filter(Boolean);if(parts.length===1)return parts[0].slice(0,2).toUpperCase();return(parts[0][0]+(parts[1]?parts[1][0]:'')).toUpperCase();}
-    function sortChatIdsByLatest(chatIds){return chatIds.sort((a,b)=>{const ua=chatsMeta[a]?.unread?1:0;const ub=chatsMeta[b]?.unread?1:0;if(ua!==ub)return ub-ua;const ta=chatsMeta[a]?.latestMsgTs||0;const tb=chatsMeta[b]?.latestMsgTs||0;return tb-ta;});}
+    function sortChatIdsByLatest(chatIds){
+      return chatIds.sort((a,b) => {
+        const ua = chatsMeta[a]?.unread ? 1 : 0;
+        const ub = chatsMeta[b]?.unread ? 1 : 0;
+        if (ua !== ub) return ub - ua;
+        const ta = chatsMeta[a]?.latestMsgTs || 0;
+        const tb = chatsMeta[b]?.latestMsgTs || 0;
+        return tb - ta;
+      });
+    }
 
-    // … Your existing JS code (onAuthStateChanged, renderContacts, openChat, appendMessageToDOM, new chat, send, search, etc.) stays exactly the same
+    onAuthStateChanged(auth, async (user) => {
+      if(!user){ location.href="index.html"; return; }
+      currentUser = user;
+      const meSnap = await get(ref(db, "users/" + currentUser.uid));
+      if(meSnap.exists()){
+        const u = meSnap.val();
+        meNameEl.textContent = u.name || (currentUser.email || 'You');
+        meIdEl.textContent = u.idNumber || currentUser.uid;
+      } else {
+        meNameEl.textContent = currentUser.email || 'You';
+        meIdEl.textContent = currentUser.uid;
+      }
 
-    // MODIFY appendMessageToDOM to support reply
+      const chatsRoot = ref(db, "chats");
+      onChildAdded(chatsRoot, snap => {
+        const chatId = snap.key;
+        if(!chatId) return;
+        const ids = chatId.split("_");
+        if(!ids.includes(currentUser.uid)) return;
+        if(!chatsMeta[chatId]) chatsMeta[chatId] = { latestMsgTs: 0, latestMsgText: "", unread: false };
+
+        const msgsRef = ref(db, `chats/${chatId}/messages`);
+        onChildAdded(msgsRef, msgSnap => {
+          const m = msgSnap.val();
+          const ts = m?.ts || 0;
+          if(ts > (chatsMeta[chatId].latestMsgTs || 0)){
+            chatsMeta[chatId].latestMsgTs = ts;
+            chatsMeta[chatId].latestMsgText = (m.text || '').slice(0,80);
+          }
+          if(m && m.sender !== currentUser.uid && activeChatId !== chatId){
+            chatsMeta[chatId].unread = true;
+            notifSound.currentTime=0; notifSound.play().catch(()=>{});
+          }
+          if(activeChatId === chatId) chatsMeta[chatId].unread=false;
+          renderContacts();
+        });
+      });
+
+      renderContacts();
+    });
+
+    meIdEl.addEventListener('click', ()=>{ navigator.clipboard.writeText(meIdEl.textContent||currentUser.uid).then(()=>alert('User ID copied!')); });
+
+    logoutBtn.addEventListener('click', async ()=>{ await signOut(auth); location.href="index.html"; });
+
+    async function renderContacts(filterText=''){
+      contactsList.innerHTML='';
+      const chatIds = Object.keys(chatsMeta);
+      if(chatIds.length===0){
+        contactsList.innerHTML=`<div class="no-contacts">No conversations yet. Click "New Chat" to start one.</div>`;
+        return;
+      }
+      const sorted = sortChatIdsByLatest(chatIds);
+      let anyShown = false;
+      for(const chatId of sorted){
+        const meta = chatsMeta[chatId];
+        const ids = chatId.split("_");
+        const otherUid = ids[0]===currentUser.uid?ids[1]:ids[0];
+        try{
+          const uSnap = await get(ref(db, `users/${otherUid}`));
+          if(!uSnap.exists()) continue;
+          const u = uSnap.val();
+          const displayName = u.name || otherUid;
+          const previewText = meta.latestMsgText || '';
+          const filter = filterText.trim().toLowerCase();
+          if(filter && !(displayName+' '+otherUid+' '+previewText).toLowerCase().includes(filter)) continue;
+
+          anyShown=true;
+          const div = document.createElement('div');
+          div.className = 'contact'+(meta.unread?' unread':'');
+          div.dataset.chatId = chatId;
+          div.dataset.otherUid = otherUid;
+
+          const ava = document.createElement('div'); ava.className='avatar'; ava.textContent=initialsFromName(displayName);
+
+          const metaWrap = document.createElement('div');
+          metaWrap.className='meta';
+          metaWrap.innerHTML=`<div style="display:flex;flex-direction:column;min-width:0">
+            <div class="name">${escapeHtml(displayName)}</div>
+            <div class="last">${escapeHtml(previewText)}</div></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end">
+            <div class="time">${meta.latestMsgTs?new Date(meta.latestMsgTs).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):''}</div>
+            <div style="height:6px"></div></div>`;
+
+          div.appendChild(ava); div.appendChild(metaWrap);
+
+          div.onclick=()=>openChat(otherUid, chatId, displayName);
+
+          // RIGHT CLICK menu
+          div.oncontextmenu=(e)=>{
+            e.preventDefault();
+            menuTargetChatId = chatId;
+            contactMenu.style.display='block';
+            contactMenu.style.left=`${e.pageX}px`;
+            contactMenu.style.top=`${e.pageY}px`;
+          };
+
+          contactsList.appendChild(div);
+        }catch(err){console.error(err);}
+      }
+      if(!anyShown) contactsList.innerHTML=`<div class="no-contacts">No conversations match your search.</div>`;
+    }
+
+    // Close menu if click outside
+    document.addEventListener('click', ()=>{ contactMenu.style.display='none'; });
+
+    deleteChatBtn.addEventListener('click', async ()=>{
+      if(!menuTargetChatId) return;
+      if(!confirm('Delete this chat and all messages?')) return;
+      try{
+        await remove(ref(db, `chats/${menuTargetChatId}`));
+        delete chatsMeta[menuTargetChatId];
+        if(activeChatId===menuTargetChatId){
+          activeChatId=null; activeOtherUid=null;
+          messagesEl.innerHTML=`<div class="no-contacts">No conversation selected.</div>`;
+          chatTitle.textContent='Select a conversation';
+          chatAvatar.textContent='A';
+        }
+        renderContacts(searchContacts.value || '');
+      }catch(err){ console.error('Delete chat failed', err); alert('Failed to delete chat.'); }
+      contactMenu.style.display='none';
+    });
+
+    async function openChat(otherUid, chatId, otherName){
+      activeChatId=chatId; activeOtherUid=otherUid;
+      chatTitle.textContent=otherName||otherUid;
+      chatAvatar.textContent=initialsFromName(otherName||otherUid);
+      chatSubtitle.textContent=(otherUid===currentUser.uid)?'You':'';
+
+      if(activeMessagesRef && activeMessageListenerAttached){ try{ off(activeMessagesRef,"child_added"); }catch(e){} activeMessageListenerAttached=false; }
+
+      const msgsRef=ref(db, `chats/${chatId}/messages`);
+      messagesEl.innerHTML='';
+      const snap=await get(msgsRef);
+      if(!snap.exists()){ messagesEl.innerHTML=`<div class="no-contacts">No messages yet. Say hi 👋</div>`; }
+      else snap.forEach(childSnap=>appendMessageToDOM(childSnap.key, childSnap.val()));
+
+      onChildAdded(msgsRef, (childSnap)=>{
+        if(messagesEl.querySelector(`[data-key="${childSnap.key}"]`)) return;
+        appendMessageToDOM(childSnap.key, childSnap.val());
+      });
+      activeMessagesRef=msgsRef; activeMessageListenerAttached=true;
+      if(chatsMeta[chatId]){ chatsMeta[chatId].unread=false; renderContacts(); }
+      messagesEl.scrollTop=messagesEl.scrollHeight;
+    }
+
     function appendMessageToDOM(msgKey,msg){
       const placeholder = messagesEl.querySelector('.no-contacts'); if(placeholder) placeholder.remove();
       const row = document.createElement('div'); row.className='bubble-row'+(msg.sender===currentUser.uid?' me':''); row.dataset.key=msgKey;
       const bubble=document.createElement('div'); bubble.className='bubble '+(msg.sender===currentUser.uid?'to':'from');
       const timeStr=msg.ts?new Date(msg.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
-
-      let replyHtml = '';
-      if(msg.reply){
-        replyHtml=`<div style="font-size:12px;color:#aaa;margin-bottom:4px;border-left:2px solid var(--accent);padding-left:4px;">Reply to <b>${escapeHtml(msg.reply.author)}</b>: ${escapeHtml(msg.reply.text)}</div>`;
-      }
-
-      bubble.innerHTML=replyHtml + `<div>${escapeHtml(msg.text||'')}</div><div class="time">${timeStr}</div>`;
+      bubble.innerHTML=`<div>${escapeHtml(msg.text||'')}</div><div class="time">${timeStr}</div>`;
       row.appendChild(bubble);
-
-      // click to reply
-      bubble.onclick=()=>{
-        if(msg.sender!==currentUser.uid){
-          currentReply={key:msgKey,text:msg.text,author:msg.sender};
-          replyAuthor.textContent=msg.sender;
-          replyText.textContent=msg.text;
-          replyPreview.style.display='block';
-        }
-      }
 
       if(msg.sender===currentUser.uid){
         const ctrls=document.createElement('div'); ctrls.className='msg-controls';
-        const editBtn=document.createElement('button'); editBtn.className='msg-btn edit'; editBtn.textContent='✎';
-        const delBtn=document.createElement('button'); delBtn.className='msg-btn del'; delBtn.textContent='🗑';
+        const editBtn=document.createElement('button'); editBtn.className='msg-btn edit'; editBtn.title='Edit message'; editBtn.innerHTML='✎';
+        editBtn.onclick=async e=>{ e.stopPropagation(); const newTxt=prompt('Edit message:', msg.text||''); if(newTxt===null) return;
+          try{ await update(ref(db, `chats/${activeChatId}/messages/${msgKey}`), { text:newTxt, edited:true }); bubble.querySelector('div').innerHTML=escapeHtml(newTxt); }catch(err){console.error(err); alert('Failed to edit message'); }
+        };
+        const delBtn=document.createElement('button'); delBtn.className='msg-btn del'; delBtn.title='Delete message'; delBtn.innerHTML='×';
+        delBtn.onclick=async e=>{ e.stopPropagation(); if(!confirm('Delete this message?')) return; try{ await remove(ref(db, `chats/${activeChatId}/messages/${msgKey}`)); row.remove(); }catch(err){console.error(err); alert('Failed to delete message'); }};
         ctrls.appendChild(editBtn); ctrls.appendChild(delBtn); row.appendChild(ctrls);
       }
-
       messagesEl.appendChild(row); messagesEl.scrollTop=messagesEl.scrollHeight;
     }
 
-    sendBtn.onclick=()=>{
-      const val=msgInput.value.trim(); if(!val) return;
-      const newMsgRef=push(ref(db,'messages/'+activeChatId));
-      const msgObj={sender:currentUser.uid,text:val,ts:Date.now()};
-      if(currentReply){ msgObj.reply={key:currentReply.key,text:currentReply.text,author:currentReply.author}; currentReply=null; replyPreview.style.display='none';}
-      set(newMsgRef,msgObj); msgInput.value=''; 
-    }
-    cancelReply.onclick=()=>{currentReply=null; replyPreview.style.display='none';}
+    sendBtn.addEventListener('click', async ()=>{
+      const text = msgInput.value.trim(); if(!text) return;
+      if(!activeChatId){ alert('Please select a conversation or start a new one.'); return; }
+      const newMsgRef=push(ref(db, `chats/${activeChatId}/messages`)); const now=Date.now();
+      await set(newMsgRef, { text, sender:currentUser.uid, ts:now });
+      msgInput.value='';
+      if(chatsMeta[activeChatId]){ chatsMeta[activeChatId].latestMsgTs=now; chatsMeta[activeChatId].latestMsgText=text.slice(0,80); }
+      renderContacts();
+    });
 
-    msgInput.addEventListener('keypress',e=>{if(e.key==='Enter'){sendBtn.click(); e.preventDefault();}});
+    msgInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendBtn.click(); } });
 
+    fileInput.addEventListener('change', e=>{
+      const f=e.target.files[0]; if(!f || !activeChatId) return;
+      const newMsgRef=push(ref(db, `chats/${activeChatId}/messages`));
+      const now=Date.now(); set(newMsgRef,{ text:`Sent a file: ${f.name}`, sender:currentUser.uid, ts:now });
+      fileInput.value='';
+    });
+
+    emojiBtn.addEventListener('click', ()=>{ msgInput.value=(msgInput.value||'')+'😊'; msgInput.focus(); });
+
+    newChatBtn.addEventListener('click', async ()=>{
+      const otherId=prompt('Enter the other user ID to chat with: (user UID or idNumber)');
+      if(!otherId) return;
+      let targetUid=otherId.trim();
+      try{
+        const possibleSnap=await get(ref(db, `users/${targetUid}`));
+        if(!possibleSnap.exists()){
+          const allUsersSnap=await get(ref(db, 'users')); let foundUid=null;
+          allUsersSnap.forEach(us=>{ const v=us.val(); if(v && (String(v.idNumber||'').toLowerCase()===otherId.toLowerCase() || (v.idNumber && v.idNumber===otherId))){ foundUid=us.key; } });
+          if(foundUid) targetUid=foundUid; else { alert('User not found!'); return; }
+        }
+        const ids=[currentUser.uid,targetUid].sort(); const chatId=ids.join('_');
+        await set(ref(db, `chats/${chatId}/meta`), { createdAt: Date.now() });
+        const userSnap=await get(ref(db, `users/${targetUid}`)); const name=userSnap.exists()?userSnap.val().name||targetUid:targetUid;
+        if(!chatsMeta[chatId]) chatsMeta[chatId]={ latestMsgTs:0, latestMsgText:'', unread:false };
+        openChat(targetUid, chatId, name); renderContacts();
+      }catch(err){ console.error(err); alert('Failed to create/open chat.'); }
+    });
+
+    searchContacts.addEventListener('input', e=>renderContacts(e.target.value));
+
+    function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    msgInput.placeholder="Type a message... (press Enter to send)";
+    messagesEl.innerHTML=`<div class="no-contacts">No conversation selected.</div>`;
+    setInterval(()=>{ renderContacts(searchContacts.value || ''); },1000);
   </script>
-
 </body>
 </html>
