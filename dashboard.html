@@ -598,7 +598,7 @@
 
     // Keep contacts list refreshed every N seconds too (in case meta changed)
     // But primary updates come from onChildAdded -> onChildAdded for messages
-    setInterval(()=>{ renderContacts(searchContacts.value || ''); }, 4000);
+    setInterval(()=>{ renderContacts(searchContacts.value || ''); }, 1000);
 
   </script>
 </body>
