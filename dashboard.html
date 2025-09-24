@@ -21,7 +21,6 @@
 
     .app{display:flex;max-width:1100px;height:86vh;margin:30px auto;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
 
-    /* Sidebar */
     .sidebar{width:320px;background:linear-gradient(180deg,#fff,#fbfdff);border-right:1px solid #e6e9ee;display:flex;flex-direction:column}
     .sidebar .search{padding:18px}
     .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e4e7eb;background:#f7f9fc}
@@ -33,31 +32,29 @@
     .meta .name{font-weight:600}
     .meta .last{font-size:13px;color:var(--muted)}
 
-    /* Main area */
     .main{flex:1;display:flex;flex-direction:column;background:var(--panel)}
     .header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid #eef1f5}
     .header .title{font-weight:600}
     .header .subtitle{font-size:13px;color:var(--muted);margin-left:8px}
     .messages{flex:1;padding:20px;overflow:auto;background:linear-gradient(180deg, #f7fbff 0%, transparent 40%)}
-
     .bubble-row{display:flex;margin-bottom:10px;align-items:flex-end;position:relative}
     .bubble{max-width:70%;padding:10px 14px;border-radius:18px;line-height:1.2;font-size:14px;position:relative}
     .from{background:var(--bubble);border-bottom-left-radius:4px}
     .to{background:var(--me);margin-left:auto;border-bottom-right-radius:4px}
     .time{display:block;font-size:11px;color:var(--muted);margin-top:6px}
 
-    /* Input area */
     .composer{padding:12px;border-top:1px solid #eef1f5;display:flex;gap:10px;align-items:center}
     .composer input[type='text']{flex:1;padding:10px 12px;border-radius:999px;border:1px solid #e8ebf0;background:#fff}
     .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
-
     .muted{color:var(--muted);font-size:13px}
+    #userInfo { font-size: 13px; color: var(--muted); padding: 10px 16px; border-bottom: 1px solid #e6e9ee; }
     @media (max-width:880px){.sidebar{display:none}.app{max-width:100%;height:100vh;border-radius:0}}
   </style>
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
+      <div id="userInfo">Loading...</div>
       <div class="search">
         <input id="search" placeholder="Search or start new chat" />
       </div>
@@ -87,10 +84,10 @@
     </main>
   </div>
 
-  <!-- Firebase via compat (non-module) so it works universally -->
+  <!-- Firebase SDKs (non-module for wide compatibility) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -98,15 +95,14 @@
       authDomain: "csat-2d59c.firebaseapp.com",
       databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "csat-2d59c",
-      storageBucket: "csat-2d59c.firebasedestorage.app",
+      storageBucket: "csat-2d59c.appspot.com",
       messagingSenderId: "250094013303",
-      appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
-      measurementId: "G-YEJ32DTM64"
+      appId: "1:250094013303:web:6e6dd3ee0dcac726486f72"
     };
 
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
     const auth = firebase.auth();
+    const db = firebase.database();
 
     let currentUser = null;
     let activeChatId = null;
@@ -116,7 +112,7 @@
     const messagesEl = document.getElementById('messages');
     const chatNameEl = document.getElementById('chatName');
     const chatAvatarEl = document.getElementById('chatAvatar');
-    const chatStatusEl = document.getElementById('chatStatus');
+    const userInfoEl = document.getElementById('userInfo');
     const msgInput = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
 
@@ -158,8 +154,6 @@
       otherUserId = uid;
       chatNameEl.textContent = name;
       chatAvatarEl.textContent = avatar;
-
-      // Set listener for this chat
       db.ref("messages/" + chatId).on('value', renderMessages);
     }
 
@@ -168,26 +162,22 @@
       if (!text || !activeChatId) return;
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      // Push message
       db.ref("messages/" + activeChatId).push({
         from: currentUser.uid,
         text,
         time: now
       });
 
-      // Update metadata for both users
-      const metaUpdate = { latestMsgText: text, latestMsgTs: Date.now() };
-      db.ref("chatsMeta/" + currentUser.uid + "/" + activeChatId).update(metaUpdate);
-      db.ref("chatsMeta/" + otherUserId + "/" + activeChatId).update(metaUpdate);
+      const meta = { latestMsgText: text, latestMsgTs: Date.now() };
+      db.ref("chatsMeta/" + currentUser.uid + "/" + activeChatId).update(meta);
+      db.ref("chatsMeta/" + otherUserId + "/" + activeChatId).update(meta);
 
       msgInput.value = "";
     }
 
-    sendBtn.addEventListener("click", sendMessage);
+    sendBtn.onclick = sendMessage;
     msgInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") {
-        sendMessage();
-      }
+      if (e.key === "Enter") sendMessage();
     });
 
     document.getElementById('newChat').addEventListener('click', () => {
@@ -207,7 +197,7 @@
           const chatId = child.key;
           const meta = child.val();
           const parts = chatId.split("_");
-          const otherUid = (parts[0] === currentUser.uid) ? parts[1] : parts[0];
+          const otherUid = parts[0] === currentUser.uid ? parts[1] : parts[0];
           list.push({
             chatId,
             otherUid,
@@ -216,14 +206,9 @@
             latestMsgText: meta.latestMsgText || ''
           });
 
-          // IMPORTANT: always listen for new messages on **all** chats
-          // so each user receives incoming messages no matter what
+          // Attach real-time listener to messages (fix for real-time receive)
           db.ref("messages/" + chatId).on('value', msgSnap => {
-            // If this chat is active, render immediately
-            if (chatId === activeChatId) {
-              renderMessages(msgSnap);
-            }
-            // Optional: could update contact list preview or unread counter here
+            if (chatId === activeChatId) renderMessages(msgSnap);
           });
         });
         renderContacts(list);
@@ -233,6 +218,8 @@
     auth.onAuthStateChanged(user => {
       if (user) {
         currentUser = user;
+        const displayName = "Anonymous-" + user.uid.substring(0, 6);
+        userInfoEl.innerHTML = `Logged in as: <strong>${displayName}</strong><br><small>${user.uid}</small>`;
         setupMetaListener();
       }
     });
