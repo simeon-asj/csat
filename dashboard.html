@@ -329,11 +329,11 @@
             notifSound.currentTime=0; notifSound.play().catch(()=>{});
           }
           if(activeChatId === chatId) chatsMeta[chatId].unread=false;
-          renderContacts();
+          updateSidebar()
         });
       });
 
-      renderContacts();
+      updateSidebar()
     });
 
     meIdEl.addEventListener('click', ()=>{ navigator.clipboard.writeText(meIdEl.textContent||currentUser.uid).then(()=>alert('User ID copied!')); });
@@ -437,7 +437,7 @@
         appendMessageToDOM(childSnap.key, childSnap.val());
       });
       activeMessagesRef=msgsRef; activeMessageListenerAttached=true;
-      if(chatsMeta[chatId]){ chatsMeta[chatId].unread=false; renderContacts(); }
+      if(chatsMeta[chatId]){ chatsMeta[chatId].unread=false; updateSidebar(); }
       messagesEl.scrollTop=messagesEl.scrollHeight;
     }
 
@@ -469,7 +469,7 @@
       await set(newMsgRef, { text, sender:currentUser.uid, ts:now });
       msgInput.value='';
       if(chatsMeta[activeChatId]){ chatsMeta[activeChatId].latestMsgTs=now; chatsMeta[activeChatId].latestMsgText=text.slice(0,80); }
-      renderContacts();
+      updateSidebar()
     });
 
     msgInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendBtn.click(); } });
@@ -498,7 +498,7 @@
         await set(ref(db, `chats/${chatId}/meta`), { createdAt: Date.now() });
         const userSnap=await get(ref(db, `users/${targetUid}`)); const name=userSnap.exists()?userSnap.val().name||targetUid:targetUid;
         if(!chatsMeta[chatId]) chatsMeta[chatId]={ latestMsgTs:0, latestMsgText:'', unread:false };
-        openChat(targetUid, chatId, name); renderContacts();
+        openChat(targetUid, chatId, name); updateSidebar()
       }catch(err){ console.error(err); alert('Failed to create/open chat.'); }
     });
 
