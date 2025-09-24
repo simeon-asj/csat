@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Messenger - Dark</title>
+  <title>UPDATED</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -508,7 +508,7 @@
 
     msgInput.placeholder="Type a message... (press Enter to send)";
     messagesEl.innerHTML=`<div class="no-contacts">No conversation selected.</div>`;
-    setInterval(()=>{ renderContacts(searchContacts.value || ''); },1000);
+    setInterval(() => updateSidebar(searchContacts.value), 1000);
   </script>
 </body>
 </html>
