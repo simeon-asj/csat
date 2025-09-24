@@ -89,9 +89,15 @@
     .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
     .ghost{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px 10px;border-radius:8px;color:var(--muted)}
 
-    .messages{flex:1;padding:20px;overflow:auto;background:
+    .messages {
+    flex: 1;
+    padding: 20px;
+    overflow: hidden; /* Removed scrollbar */
+    background:
       radial-gradient(600px 200px at 80% 10%, rgba(255,0,115,0.02), transparent 6%),
-      linear-gradient(180deg, rgba(255,255,255,0.01), transparent 40%);}
+      linear-gradient(180deg, rgba(255,255,255,0.01), transparent 40%);
+}
+
 
     .bubble-row{display:flex;margin-bottom:12px;align-items:flex-end;position:relative;max-width:100%}
     .bubble{max-width:70%;padding:10px 14px;border-radius:18px;line-height:1.2;font-size:14px;position:relative;word-break:break-word}
