@@ -1,75 +1,427 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>User Dashboard</title>
-<style>
-body{background:#121212;color:#fff;font-family:Poppins,sans-serif;padding:30px;}
-h2{margin-bottom:20px;}
-input{padding:10px;width:250px;border:none;border-radius:6px;background:#262626;color:#fff;}
-button{padding:10px 20px;margin-left:10px;background:#4CAF50;color:#fff;border:none;border-radius:6px;cursor:pointer;}
-button:hover{background:#43a047;}
-.result{margin-top:20px;background:#1e1e1e;padding:20px;border-radius:10px;min-height:60px;}
-.logout{position:absolute;top:20px;right:20px;background:#e53935;}
-.logout:hover{background:#d32f2f;}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Dashboard</title>
+  <style>
+    /* ===== Base ===== */
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: #0e0e0e;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+    }
+    button, input {
+      outline: none;
+      border: none;
+      font-family: inherit;
+    }
+
+    /* ===== Sidebar ===== */
+    .sidebar {
+      width: 260px;
+      background: #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #262626;
+    }
+    #userInfo {
+      padding: 12px;
+      background: #111;
+      border-bottom: 1px solid #262626;
+      font-size: 13px;
+    }
+    #userInfo b {
+      font-weight: 600;
+    }
+    #userId {
+      cursor: pointer;
+      color: #03a9f4;
+      text-decoration: underline;
+    }
+    #userId:hover {
+      color: #29b6f6;
+    }
+    .searchBox {
+      display: flex;
+      gap: 4px;
+      padding: 8px;
+      border-bottom: 1px solid #262626;
+    }
+    .searchBox input {
+      flex: 1;
+      padding: 6px 8px;
+      border-radius: 5px;
+      background: #242424;
+      color: #fff;
+      font-size: 13px;
+    }
+    .searchBox button {
+      padding: 6px 8px;
+      border-radius: 5px;
+      background: #e91e63;
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    #chatList {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+    .chat-item {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      border-bottom: 1px solid #262626;
+      cursor: pointer;
+    }
+    .chat-item:hover {
+      background: #2a2a2a;
+    }
+    .chat-item.unread .name-id {
+      font-weight: bold;
+    }
+    .chat-item .latest-msg {
+      color: #aaa;
+      font-size: 12px;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .online-label {
+      color: #4caf50;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ===== Main ===== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      padding: 12px 16px;
+      background: #111;
+      font-weight: 600;
+      font-size: 14px;
+      border-bottom: 1px solid #262626;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logout {
+      padding: 4px 10px;
+      border-radius: 5px;
+      background: #e53935;
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .logout:hover {
+      background: #d32f2f;
+    }
+
+    /* ===== Messages ===== */
+    .messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #121212;
+    }
+    .msg {
+      max-width: 70%;
+      padding: 8px 12px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.4em;
+      position: relative;
+      word-wrap: break-word;
+    }
+    .msg.me {
+      align-self: flex-end;
+      background: #ff0073;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.other {
+      align-self: flex-start;
+      background: #2a2a2a;
+      color: #fff;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* ===== Input Row ===== */
+    .inputRow {
+      display: flex;
+      padding: 12px 16px;
+      gap: 8px;
+      border-top: 1px solid #262626;
+      background: #111;
+    }
+    .inputRow input {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 20px;
+      background: #242424;
+      color: #fff;
+      font-size: 14px;
+    }
+    .inputRow button {
+      padding: 10px 16px;
+      border-radius: 20px;
+      background: #e91e63;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .inputRow button:hover {
+      background: #d81b60;
+    }
+  </style>
 </head>
 <body>
-<h2>🔎 Search User by ID Number</h2>
-<input type="text" id="searchId" placeholder="Enter ID (e.g. USR-ABC123)">
-<button id="searchBtn">Search</button>
-<div class="result" id="result"></div>
-<button class="logout" id="logoutBtn">Logout</button>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div id="userInfo">
+      Logged in as: <b id="userName">Loading...</b><br>
+      ID: <small id="userId" title="Click to copy">Loading...</small>
+    </div>
+    <div class="searchBox">
+      <input id="searchUser" placeholder="Search ID…">
+      <button id="searchBtn">Go</button>
+    </div>
+    <div id="chatList"></div>
+  </div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
-  authDomain: "csat-2d59c.firebaseapp.com",
-  databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "csat-2d59c",
-  storageBucket: "csat-2d59c.firebasestorage.app",
-  messagingSenderId: "250094013303",
-  appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
-  measurementId: "G-YEJ32DTM64"
-};
+  <!-- Main Chat -->
+  <div class="main">
+    <div id="chatHeader" class="header">
+      Select a user
+      <button id="logoutBtn" class="logout">Logout</button>
+    </div>
+    <div id="messages" class="messages"></div>
+    <div class="inputRow">
+      <input id="msgInput" placeholder="Type a message">
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+  <audio id="notifSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1152-pristine.mp3" preload="auto"></audio>
 
-const resultDiv = document.getElementById("result");
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { getDatabase, ref, get, child, push, set, onChildAdded, off } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-// protect page
-onAuthStateChanged(auth,(user)=>{
-  if(!user){
-    window.location.href="index.html";
-  }
-});
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
+      authDomain: "csat-2d59c.firebaseapp.com",
+      databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "csat-2d59c",
+      storageBucket: "csat-2d59c.firebasedestorage.app",
+      messagingSenderId: "250094013303",
+      appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
+      measurementId: "G-YEJ32DTM64"
+    };
 
-document.getElementById("searchBtn").addEventListener("click", async ()=>{
-  const idInput = document.getElementById("searchId").value.trim();
-  if(!idInput){ resultDiv.textContent="Enter an ID."; return; }
-  const snapshot = await get(ref(db,"users"));
-  let found=false;
-  snapshot.forEach(childSnap=>{
-    const data = childSnap.val();
-    if(data.idNumber === idInput){
-      resultDiv.innerHTML = `<b>Name:</b> ${data.name}<br><b>Email:</b> ${data.email}<br><b>ID:</b> ${data.idNumber}`;
-      found=true;
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getDatabase(app);
+
+    const logoutBtn   = document.getElementById("logoutBtn");
+    const chatList    = document.getElementById("chatList");
+    const msgInput    = document.getElementById("msgInput");
+    const sendBtn     = document.getElementById("sendBtn");
+    const chatHeader  = document.getElementById("chatHeader");
+    const messagesDiv = document.getElementById("messages");
+    const searchBtn   = document.getElementById("searchBtn");
+    const searchInput = document.getElementById("searchUser");
+    const notifSound  = document.getElementById("notifSound");
+    const userNameEl  = document.getElementById("userName");
+    const userIdEl    = document.getElementById("userId");
+
+    let currentUser = null;
+    let activeChatId = null;
+    let activeMessagesRef = null;
+    let chatsMeta = {};
+
+    function sortChatIdsByLatest(chatIds) {
+      return chatIds.sort((a, b) => {
+        const ta = chatsMeta[a]?.latestMsgTs || 0;
+        const tb = chatsMeta[b]?.latestMsgTs || 0;
+        return tb - ta;
+      });
     }
-  });
-  if(!found) resultDiv.textContent="❌ No user found for this ID.";
-});
 
-document.getElementById("logoutBtn").addEventListener("click", async ()=>{
-  await signOut(auth);
-  window.location.href="index.html";
-});
-</script>
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        location.href = "index.html";
+        return;
+      }
+      currentUser = user;
+
+      const usnap = await get(ref(db, "users/" + currentUser.uid));
+      if (usnap.exists()) {
+        const u = usnap.val();
+        userNameEl.textContent = u.name || "N/A";
+        userIdEl.textContent = u.idNumber || "N/A";
+      }
+
+      const chatsRef = ref(db, "chats");
+      onChildAdded(chatsRef, snap => {
+        const chatId = snap.key;
+        const ids = chatId.split("_");
+        if (!ids.includes(currentUser.uid)) return;
+
+        if (!chatsMeta[chatId]) {
+          chatsMeta[chatId] = { latestMsgTs: 0, latestMsgText: "", unread: false };
+        }
+
+        const msgsRef = ref(db, `chats/${chatId}/messages`);
+        onChildAdded(msgsRef, msgSnap => {
+          const m = msgSnap.val();
+          const ts = m.ts || 0;
+          if (ts > (chatsMeta[chatId].latestMsgTs || 0)) {
+            chatsMeta[chatId].latestMsgTs = ts;
+            chatsMeta[chatId].latestMsgText = m.text || "";
+          }
+          if (m.sender !== currentUser.uid && activeChatId !== chatId) {
+            chatsMeta[chatId].unread = true;
+            notifSound.play().catch(() => {});
+          }
+          if (activeChatId === chatId) {
+            chatsMeta[chatId].unread = false;
+          }
+          renderChatList();
+        });
+      });
+      renderChatList();
+    });
+
+    userIdEl.addEventListener("click", () => {
+      navigator.clipboard.writeText(userIdEl.textContent)
+        .then(() => alert("User ID copied!"))
+        .catch(() => alert("Failed to copy ID."));
+    });
+
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      location.href = "index.html";
+    };
+
+    function renderChatList() {
+      chatList.innerHTML = "";
+      const chatIds = Object.keys(chatsMeta);
+      const sorted = sortChatIdsByLatest(chatIds);
+
+      sorted.forEach(chatId => {
+        const meta = chatsMeta[chatId];
+        const ids = chatId.split("_");
+        const otherUid = ids[0] === currentUser.uid ? ids[1] : ids[0];
+
+        get(child(ref(db), "users/" + otherUid)).then(uSnap => {
+          if (!uSnap.exists()) return;
+          const u = uSnap.val();
+
+          const div = document.createElement("div");
+          div.className = "chat-item" + (meta.unread ? " unread" : "");
+
+          const topLine = document.createElement("div");
+          topLine.className = "top-line";
+
+          const nameId = document.createElement("div");
+          nameId.className = "name-id";
+          nameId.innerText = u.name || "N/A";
+
+          const onlineLabel = document.createElement("div");
+          onlineLabel.className = "online-label";
+          onlineLabel.textContent = (u.online === true || u.online === "true") ? "online" : "";
+
+          topLine.appendChild(nameId);
+          topLine.appendChild(onlineLabel);
+          div.appendChild(topLine);
+
+          const msgPreview = document.createElement("div");
+          msgPreview.className = "latest-msg";
+          msgPreview.innerText = meta.latestMsgText || "";
+          div.appendChild(msgPreview);
+
+          div.onclick = () => openChat(otherUid, chatId, u.name);
+          chatList.appendChild(div);
+        });
+      });
+    }
+
+    async function openChat(otherUid, chatId, otherName) {
+      activeChatId = chatId;
+      chatHeader.textContent = `Chat with ${otherName}`;
+      messagesDiv.innerHTML = "";
+
+      if (activeMessagesRef) off(activeMessagesRef, "child_added");
+      activeMessagesRef = ref(db, `chats/${chatId}/messages`);
+
+      get(activeMessagesRef).then(snap => {
+        messagesDiv.innerHTML = "";
+        snap.forEach(childSnap => appendMessage(childSnap.val()));
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+
+      onChildAdded(activeMessagesRef, snap => {
+        const m = snap.val();
+        if (messagesDiv.querySelector(`[data-ts="${m.ts}"]`)) return;
+        appendMessage(m);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      });
+
+      if (chatsMeta[chatId]) {
+        chatsMeta[chatId].unread = false;
+        renderChatList();
+      }
+    }
+
+    function appendMessage(msg) {
+      const div = document.createElement("div");
+      div.className = "msg " + (msg.sender === currentUser.uid ? "me" : "other");
+      div.textContent = msg.text;
+      div.dataset.ts = msg.ts || Date.now();
+      messagesDiv.appendChild(div);
+    }
+
+    sendBtn.onclick = async () => {
+      if (!activeChatId) {
+        alert("Please select a user first.");
+        return;
+      }
+      const text = msgInput.value.trim();
+      if (!text) return;
+      const newMsgRef = push(ref(db, `chats/${activeChatId}/messages`));
+      await set(newMsgRef, { text, sender: currentUser.uid, ts: Date.now() });
+      msgInput.value = "";
+    };
+
+    searchBtn.onclick = async () => {
+      const searchId = searchInput.value.trim();
+      if (!searchId) return;
+      const userSnap = await get(ref(db, "users/" + searchId));
+      if (!userSnap.exists()) {
+        alert("User not found!");
+        return;
+      }
+      const ids = [currentUser.uid, searchId].sort();
+      const chatId = ids.join("_");
+      openChat(searchId, chatId, userSnap.val().name || "User");
+    };
+  </script>
 </body>
 </html>
