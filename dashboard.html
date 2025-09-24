@@ -3,165 +3,253 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Messenger - Dark</title>
+  <title>Messenger Dark Mode</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0b0c0f;
-      --panel:#0f1114;
-      --muted:#9aa3b2;
-      --accent:#ff0073;
-      --bubble:#1b2330;
-      --me:#2b2b2b;
-      --muted-2:#7f8b99;
-      --glass: rgba(255,255,255,0.03);
+      --bg:#1e1f22;
+      --panel:#2a2b2f;
+      --muted:#a0a3a7;
+      --accent:#0078ff;
+      --bubble:#3a3b3f;
+      --me:#056162;
+      --shadow: 0 4px 12px rgba(0,0,0,0.4);
       font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
     }
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:var(--bg);color:#e6eef6;-webkit-font-smoothing:antialiased}
+    html,body{height:100%;margin:0;background:var(--bg);color:#fff}
 
-    .app{
-      display:flex;
-      max-width:1100px;
-      height:86vh;
-      margin:30px auto;
-      border-radius:12px;
-      overflow:hidden;
-      background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
-      box-shadow: 0 8px 30px rgba(0,0,0,0.7);
-      border: 1px solid rgba(255,255,255,0.02);
-    }
+    .app{display:flex;max-width:1100px;height:90vh;margin:20px auto;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
 
     /* Sidebar */
-    .sidebar{
-      width:320px;
-      background:linear-gradient(180deg,#0f1114,#0b0c0f);
-      border-right:1px solid rgba(255,255,255,0.03);
-      display:flex;
-      flex-direction:column;
-      gap:0;
-    }
-    .sidebar-top{
-      padding:14px 16px;
-      display:flex;
-      align-items:center;
-      gap:12px;
-      border-bottom:1px solid rgba(255,255,255,0.02);
-    }
-    .me-info{flex:1;font-size:13px}
-    .me-name{font-weight:600}
-    .me-id{color:var(--accent);cursor:pointer;text-decoration:underline;font-size:13px}
-    .sidebar .search{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.02)}
-    .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);
-      background:var(--glass); color:#e6eef6}
+    .sidebar{width:320px;background:var(--panel);border-right:1px solid #444;display:flex;flex-direction:column}
+    .sidebar .search{padding:18px}
+    .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #444;background:#1e1f22;color:#fff}
     .contacts{flex:1;overflow:auto;padding:6px 0}
-    .contact{
-      display:flex;align-items:center;padding:12px 16px;gap:12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.01)
-    }
-    .contact:hover{background:rgba(255,255,255,0.015)}
-    .avatar{width:44px;height:44px;border-radius:50%;flex-shrink:0;
-      background:linear-gradient(135deg,#4a90e2,#8e44ad);
-      display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
-    .meta{flex:1;display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .meta .name{font-weight:600;color:#eaf2ff}
-    .meta .last{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
-    .contact .time{font-size:12px;color:var(--muted-2)}
-    .contact.unread .meta .name{font-weight:700}
-    .no-contacts{padding:16px;color:var(--muted);font-size:13px}
+    .contact{display:flex;align-items:center;padding:12px 16px;gap:12px;cursor:pointer}
+    .contact:hover{background:#38393d}
+    .avatar{width:44px;height:44px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#0078ff,#00c6ff);display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+    .meta{flex:1;display:flex;justify-content:space-between;align-items:center}
+    .meta .name{font-weight:600}
+    .meta .last{font-size:13px;color:var(--muted)}
 
     /* Main area */
     .main{flex:1;display:flex;flex-direction:column;background:var(--panel)}
-    .header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.02)}
-    .header .title{font-weight:600;color:#eaf2ff}
+    .header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid #444}
+    .header .title{font-weight:600}
     .header .subtitle{font-size:13px;color:var(--muted);margin-left:8px}
-    .header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
-    .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
-    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px 10px;border-radius:8px;color:var(--muted)}
+    .messages{flex:1;padding:20px;overflow:auto;background:linear-gradient(180deg, #2a2b2f 0%, #1e1f22 40%)}
 
-    .messages{flex:1;padding:20px;overflow:auto;background:
-      radial-gradient(600px 200px at 80% 10%, rgba(255,0,115,0.02), transparent 6%),
-      linear-gradient(180deg, rgba(255,255,255,0.01), transparent 40%);}
+    .bubble-row{display:flex;margin-bottom:10px;align-items:flex-end;position:relative}
+    .bubble{max-width:70%;padding:10px 14px;border-radius:18px;line-height:1.2;font-size:14px;position:relative;word-wrap:break-word;white-space:pre-wrap}
+    .from{background:var(--bubble);border-bottom-left-radius:4px}
+    .to{background:var(--me);margin-left:auto;border-bottom-right-radius:4px;color:#fff}
+    .time{display:block;font-size:11px;color:var(--muted);margin-top:6px}
 
-    .bubble-row{display:flex;margin-bottom:12px;align-items:flex-end;position:relative;max-width:100%}
-    .bubble{max-width:70%;padding:10px 14px;border-radius:18px;line-height:1.2;font-size:14px;position:relative;word-break:break-word}
-    .from{background:var(--bubble);border-bottom-left-radius:4px;color:#e6eef6}
-    .to{background:linear-gradient(180deg,#ff2b7a 0%, #ee0066 100%);margin-left:auto;border-bottom-right-radius:4px;color:white}
-    .time{display:block;font-size:11px;color:var(--muted);margin-top:6px;text-align:right}
-    .bubble-row.me{justify-content:flex-end}
-    .msg-controls{position:absolute;top:-10px;right:-44px;display:flex;gap:6px;opacity:0;pointer-events:none}
-    .bubble-row:hover .msg-controls{opacity:1;pointer-events:auto}
-    .msg-btn{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;border:none;cursor:pointer}
-    .msg-btn.edit{background:rgba(255,255,255,0.04);color:#9ec0ff}
-    .msg-btn.del{background:rgba(255,0,115,0.12);color:#ffb6c8}
+    .delete-btn,.edit-btn{position:absolute;top:-8px;background:#555;color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;display:none;}
+    .delete-btn{right:-8px;background:#ff5c5c;}
+    .edit-btn{right:18px;background:#0078ff;}
+    .bubble-row:hover .delete-btn,.bubble-row:hover .edit-btn{display:block;}
 
-    /* Composer */
-    .composer{padding:12px;border-top:1px solid rgba(255,255,255,0.02);display:flex;gap:10px;align-items:center;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+    /* Input area */
+    .composer{padding:12px;border-top:1px solid #444;display:flex;gap:10px;align-items:center}
     .composer .actions{display:flex;gap:8px}
-    .composer input[type='text']{flex:1;padding:10px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#eaf2ff}
-    .small-muted{color:var(--muted);font-size:13px}
+    .composer input[type='text']{flex:1;padding:10px 12px;border-radius:999px;border:1px solid #444;background:#1e1f22;color:#fff}
+    .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
+
+    .muted{color:var(--muted);font-size:13px}
 
     @media (max-width:880px){.sidebar{display:none}.app{max-width:100%;height:100vh;border-radius:0}}
-    .hidden{display:none}
   </style>
 </head>
 <body>
+
   <div class="app">
-    <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="sidebar-top">
-        <div style="display:flex;flex-direction:column" class="me-info">
-          <div class="me-name" id="meName">Loading...</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <div class="me-id" id="meId">Loading...</div>
-            <button id="logoutBtn" class="ghost" style="font-size:12px">Logout</button>
-          </div>
-        </div>
-        <button id="newChatBtn" class="btn">New Chat</button>
-      </div>
-
       <div class="search">
-        <input id="searchContacts" placeholder="Search conversations or user ID" />
+        <input id="search" placeholder="Search or start new chat" />
       </div>
-
-      <div class="contacts" id="contactsList">
-        <div class="no-contacts">Loading conversations...</div>
-      </div>
+      <div class="contacts" id="contacts"></div>
     </aside>
 
-    <!-- Main -->
     <main class="main">
       <div class="header">
         <div style="display:flex;align-items:center;gap:12px">
-          <div class="avatar" id="chatAvatar">A</div>
+          <div class="avatar" id="chatAvatar">?</div>
           <div>
-            <div class="title" id="chatTitle">Select a conversation</div>
-            <div class="subtitle" id="chatSubtitle"></div>
+            <div class="title" id="chatName">Select a conversation</div>
+            <div class="subtitle" id="chatStatus">Offline</div>
           </div>
         </div>
-        <div class="header-right">
-          <div id="typingIndicator" class="small-muted hidden">Typing…</div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn" id="newChat">New Chat</button>
         </div>
       </div>
 
-      <div class="messages" id="messages">
-        <div class="no-contacts">No conversation selected.</div>
-      </div>
+      <div class="messages" id="messages"></div>
 
       <div class="composer">
         <div class="actions">
           <label title="Attach file" style="cursor:pointer">
-            <input id="fileInput" type="file" style="display:none" />📎
+            <input id="fileInput" type="file" style="display:none" />
+            📎
           </label>
-          <button id="emojiBtn" class="ghost">😊</button>
+          <button id="emojiBtn" title="Emoji">😊</button>
         </div>
         <input id="msgInput" type="text" placeholder="Type a message... (press Enter to send)" />
-        <button id="sendBtn" class="btn">Send</button>
+        <button class="btn" id="sendBtn">Send</button>
       </div>
     </main>
   </div>
 
-  <audio id="notifSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1152-pristine.mp3" preload="auto"></audio>
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, doc, addDoc, setDoc, getDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  <script type="module" src="./messenger.js"></script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhT_VolZsIz7F_AxnVkagd85ngXCGErQw",
+      authDomain: "csat-2d59c.firebaseapp.com",
+      databaseURL: "https://csat-2d59c-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "csat-2d59c",
+      storageBucket: "csat-2d59c.firebasedestorage.app",
+      messagingSenderId: "250094013303",
+      appId: "1:250094013303:web:6e6dd3ee0dcac726486f72",
+      measurementId: "G-YEJ32DTM64"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const userId = "user1"; // logged in user (demo)
+
+    const contactsEl = document.getElementById('contacts');
+    const messagesEl = document.getElementById('messages');
+    const chatNameEl = document.getElementById('chatName');
+    const chatAvatarEl = document.getElementById('chatAvatar');
+    let activeChatId = null;
+    let unsubscribeMessages = null;
+
+    // Load chat list
+    function loadChats(userId) {
+      const chatsRef = collection(db, "chats");
+      const q = query(chatsRef, where("participants", "array-contains", userId));
+
+      onSnapshot(q, async (snapshot) => {
+        contactsEl.innerHTML = "";
+        if (snapshot.empty) {
+          contactsEl.innerHTML = "<div class='muted' style='padding:12px'>No conversations yet</div>";
+          return;
+        }
+
+        for (const docSnap of snapshot.docs) {
+          const chat = docSnap.data();
+          const chatId = docSnap.id;
+          const otherId = chat.participants.find(p => p !== userId);
+
+          const userRef = doc(db, "users", otherId);
+          const userSnap = await getDoc(userRef);
+          const userData = userSnap.exists() ? userSnap.data() : { name: otherId };
+
+          const lastMsg = chat.lastMessage || "";
+          const lastTime = chat.lastTimestamp ? new Date(chat.lastTimestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "";
+
+          const el = document.createElement('div');
+          el.className = 'contact';
+          el.innerHTML = `
+            <div class="avatar">${userData.name?.charAt(0).toUpperCase() || "?"}</div>
+            <div class="meta">
+              <div style="display:flex;flex-direction:column">
+                <div class="name">${userData.name || otherId}</div>
+                <div class="last muted">${lastMsg}</div>
+              </div>
+              <div class="time muted">${lastTime}</div>
+            </div>
+          `;
+          el.onclick = () => openChat(chatId, otherId, userData.name);
+          contactsEl.appendChild(el);
+        }
+      });
+    }
+
+    // Open chat
+    function openChat(chatId, otherId, name) {
+      activeChatId = chatId;
+      chatNameEl.textContent = name;
+      chatAvatarEl.textContent = name.charAt(0).toUpperCase();
+
+      if (unsubscribeMessages) unsubscribeMessages();
+
+      const msgsRef = collection(db, "chats", chatId, "messages");
+      const q = query(msgsRef, orderBy("timestamp"));
+      unsubscribeMessages = onSnapshot(q, (snapshot) => {
+        messagesEl.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+          const m = docSnap.data();
+          renderMessage(m, docSnap.id);
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      });
+    }
+
+    function renderMessage(m, id) {
+      const row = document.createElement('div');
+      row.className = 'bubble-row';
+      const b = document.createElement('div');
+      b.className = 'bubble ' + (m.sender === userId ? 'to' : 'from');
+      b.innerHTML = `<div>${escapeHtml(m.text)}</div><div class='time'>${m.timestamp ? new Date(m.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ""}</div>`;
+
+      if (m.sender === userId) {
+        const del = document.createElement('button');
+        del.className='delete-btn';
+        del.textContent='×';
+        del.onclick = async () => await deleteDoc(doc(db, "chats", activeChatId, "messages", id));
+
+        const edit = document.createElement('button');
+        edit.className='edit-btn';
+        edit.textContent='✎';
+        edit.onclick = async () => {
+          const newTxt = prompt("Edit message:", m.text);
+          if(newTxt) await updateDoc(doc(db, "chats", activeChatId, "messages", id), { text:newTxt });
+        };
+
+        row.appendChild(b); row.appendChild(del); row.appendChild(edit);
+      } else {
+        row.appendChild(b);
+      }
+
+      if(m.sender === userId) row.style.justifyContent='flex-end';
+      messagesEl.appendChild(row);
+    }
+
+    function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    // Send message
+    document.getElementById('sendBtn').addEventListener('click', async ()=>{
+      const v=document.getElementById('msgInput').value;
+      if(!v.trim() || !activeChatId) return;
+
+      const msgsRef = collection(db, "chats", activeChatId, "messages");
+      await addDoc(msgsRef, {
+        text:v,
+        sender:userId,
+        timestamp:serverTimestamp()
+      });
+
+      await updateDoc(doc(db,"chats",activeChatId), {
+        lastMessage:v,
+        lastTimestamp:serverTimestamp()
+      });
+
+      document.getElementById('msgInput').value='';
+    });
+
+    document.getElementById('msgInput').addEventListener('keydown',(e)=>{ 
+      if(e.key==='Enter'){ e.preventDefault(); document.getElementById('sendBtn').click(); } 
+    });
+
+    // Start
+    loadChats(userId);
+  </script>
 </body>
 </html>
