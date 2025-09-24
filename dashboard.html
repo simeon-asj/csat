@@ -22,6 +22,7 @@
     .app{display:flex;max-width:1100px;height:86vh;margin:30px auto;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
 
     .sidebar{width:320px;background:linear-gradient(180deg,#fff,#fbfdff);border-right:1px solid #e6e9ee;display:flex;flex-direction:column}
+    #userInfo { font-size: 13px; color: var(--muted); padding: 10px 16px; border-bottom: 1px solid #e6e9ee; }
     .sidebar .search{padding:18px}
     .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e4e7eb;background:#f7f9fc}
     .contacts{flex:1;overflow:auto;padding:6px 0}
@@ -37,6 +38,7 @@
     .header .title{font-weight:600}
     .header .subtitle{font-size:13px;color:var(--muted);margin-left:8px}
     .messages{flex:1;padding:20px;overflow:auto;background:linear-gradient(180deg, #f7fbff 0%, transparent 40%)}
+
     .bubble-row{display:flex;margin-bottom:10px;align-items:flex-end;position:relative}
     .bubble{max-width:70%;padding:10px 14px;border-radius:18px;line-height:1.2;font-size:14px;position:relative}
     .from{background:var(--bubble);border-bottom-left-radius:4px}
@@ -46,15 +48,15 @@
     .composer{padding:12px;border-top:1px solid #eef1f5;display:flex;gap:10px;align-items:center}
     .composer input[type='text']{flex:1;padding:10px 12px;border-radius:999px;border:1px solid #e8ebf0;background:#fff}
     .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
+
     .muted{color:var(--muted);font-size:13px}
-    #userInfo { font-size: 13px; color: var(--muted); padding: 10px 16px; border-bottom: 1px solid #e6e9ee; }
     @media (max-width:880px){.sidebar{display:none}.app{max-width:100%;height:100vh;border-radius:0}}
   </style>
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
-      <div id="userInfo">Loading...</div>
+      <div id="userInfo">Loading user...</div>
       <div class="search">
         <input id="search" placeholder="Search or start new chat" />
       </div>
@@ -84,7 +86,7 @@
     </main>
   </div>
 
-  <!-- Firebase SDKs (non-module for wide compatibility) -->
+  <!-- Firebase SDKs (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -107,12 +109,13 @@
     let currentUser = null;
     let activeChatId = null;
     let otherUserId = null;
+    let currentUserDisplayName = "";
 
+    const userInfoEl = document.getElementById('userInfo');
     const contactsEl = document.getElementById('contacts');
     const messagesEl = document.getElementById('messages');
     const chatNameEl = document.getElementById('chatName');
     const chatAvatarEl = document.getElementById('chatAvatar');
-    const userInfoEl = document.getElementById('userInfo');
     const msgInput = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
 
@@ -160,7 +163,7 @@
     function sendMessage() {
       const text = msgInput.value.trim();
       if (!text || !activeChatId) return;
-      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const now = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
 
       db.ref("messages/" + activeChatId).push({
         from: currentUser.uid,
@@ -168,16 +171,18 @@
         time: now
       });
 
-      const meta = { latestMsgText: text, latestMsgTs: Date.now() };
-      db.ref("chatsMeta/" + currentUser.uid + "/" + activeChatId).update(meta);
-      db.ref("chatsMeta/" + otherUserId + "/" + activeChatId).update(meta);
+      const metaUpdate = { latestMsgText: text, latestMsgTs: Date.now() };
+      db.ref("chatsMeta/" + currentUser.uid + "/" + activeChatId).update(metaUpdate);
+      db.ref("chatsMeta/" + otherUserId + "/" + activeChatId).update(metaUpdate);
 
       msgInput.value = "";
     }
 
-    sendBtn.onclick = sendMessage;
+    sendBtn.addEventListener("click", sendMessage);
     msgInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") sendMessage();
+      if (e.key === "Enter") {
+        sendMessage();
+      }
     });
 
     document.getElementById('newChat').addEventListener('click', () => {
@@ -197,7 +202,7 @@
           const chatId = child.key;
           const meta = child.val();
           const parts = chatId.split("_");
-          const otherUid = parts[0] === currentUser.uid ? parts[1] : parts[0];
+          const otherUid = (parts[0] === currentUser.uid) ? parts[1] : parts[0];
           list.push({
             chatId,
             otherUid,
@@ -206,9 +211,10 @@
             latestMsgText: meta.latestMsgText || ''
           });
 
-          // Attach real-time listener to messages (fix for real-time receive)
           db.ref("messages/" + chatId).on('value', msgSnap => {
-            if (chatId === activeChatId) renderMessages(msgSnap);
+            if (chatId === activeChatId) {
+              renderMessages(msgSnap);
+            }
           });
         });
         renderContacts(list);
@@ -218,13 +224,30 @@
     auth.onAuthStateChanged(user => {
       if (user) {
         currentUser = user;
-        const displayName = "Anonymous-" + user.uid.substring(0, 6);
-        userInfoEl.innerHTML = `Logged in as: <strong>${displayName}</strong><br><small>${user.uid}</small>`;
-        setupMetaListener();
+        // fetch displayName from your DB
+        db.ref("users/" + user.uid + "/displayName").once('value')
+          .then(snap => {
+            const dn = snap.val();
+            currentUserDisplayName = dn || "Unknown";
+            // show it
+            userInfoEl.innerHTML = `Logged in as: <strong>${currentUserDisplayName}</strong> (<small>${user.uid}</small>)`;
+            // now also start listening to chats
+            setupMetaListener();
+          })
+          .catch(err => {
+            console.error("Error fetching displayName:", err);
+            userInfoEl.innerText = `User ID: ${user.uid}`;
+            setupMetaListener();
+          });
+      } else {
+        // not logged in
+        userInfoEl.innerText = "Not logged in";
       }
     });
 
-    auth.signInAnonymously();
+    // NOTE: Do NOT signInAnonymously if you are already signing in via register/login form.
+    // Remove/comment this if you have your own login form that sets auth via email/password etc.
+    // auth.signInAnonymously();
   </script>
 </body>
 </html>
