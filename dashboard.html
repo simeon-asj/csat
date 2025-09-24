@@ -275,11 +275,14 @@
             chatsMeta[chatId].latestMsgTs = ts;
             chatsMeta[chatId].latestMsgText = (m.text || '').slice(0,80);
           }
-          // if message is from other user and that chat is not active -> unread + play sound
-          if(m && m.sender !== currentUser.uid && activeChatId !== chatId){
-            chatsMeta[chatId].unread = true;
-            notifSound.play().catch(()=>{});
-          }
+          // ✅ Play sound only if:
+  // - message is from another user
+  // - chat is not active
+  if (m && m.sender !== currentUser.uid && activeChatId !== chatId) {
+    chatsMeta[chatId].unread = true;
+    notifSound.currentTime = 0;   // rewind sound in case it overlaps
+    notifSound.play().catch(()=>{});
+  }
           // if active, clear unread
           if(activeChatId === chatId) chatsMeta[chatId].unread = false;
           renderContacts();
