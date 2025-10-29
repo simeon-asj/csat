@@ -506,7 +506,7 @@
 
     function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    msgInput.placeholder="Type a message... (press Enter to send)";
+    msgInput.placeholder="";
     messagesEl.innerHTML=`<div class="no-contacts">No conversation selected.</div>`;
     setInterval(()=>{ renderContacts(searchContacts.value || ''); },1000);
   </script>
